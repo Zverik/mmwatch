@@ -1,0 +1,50 @@
+<!doctype html>
+<title>MAPS.ME OSM Changes Browser</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+<body>
+<h1>OSM Edits Made With MAPS.ME</h1>
+<div id="stats">
+  <h2>Statistics</h2>
+  <ul>
+    <li>Total: {{ stats.total }}</li>
+    <li>Created: {{ stats.created }}</li>
+    <li>Deleted: {{ stats.deleted }}</li>
+    <li>Modified: {{ stats.modified }}</li>
+    <li>Anomalies: {{ stats.anomalies }}</li>
+    <li>Nodes: {{ stats.nodes }}</li>
+    <li>Ways: {{ stats.ways }}</li>
+    <li>Relations: {{stats.relations }}</li>
+  </ul>
+</div>
+<div>
+  <h2>Top Users</h2>
+  <ol>
+    {% for user in users %}
+    <li>{{ user.user }} ({{user.count}})</li>
+    {% endfor %}
+  </ol>
+</div>
+<div>
+  <h2>Top Main Tags</h2>
+  <ol>
+    {% for tag in tags %}
+    <li>{{ tag.main_tag }} ({{tag.count}})</li>
+    {% endfor %}
+  </ol>
+</div>
+<div>
+  <h2>Versions</h2>
+  <ol>
+    {% for v in versions %}
+    <li>{{ v.version }} ({{v.count}})</li>
+    {% endfor %}
+  </ol>
+</div>
+<div>
+  <h2>Changes</h2>
+  {% for change in changes %}
+  <div>
+    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.main_tag }}
+  </div>
+  {% endfor %}
+</div>

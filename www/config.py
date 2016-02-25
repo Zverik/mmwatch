@@ -1,0 +1,4 @@
+DATABASE_PATH = '../server'
+DEBUG = True
+PAGE_SIZE = 30
+TOP = 10
