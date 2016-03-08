@@ -24,14 +24,14 @@ class Change(peewee.Model):
   changes = peewee.TextField()
 
   def changed_coord(self):
-    changes = json.loads(self.changes)
-    return None if changes is None else changes[0]
+    if self.action == 'a':
+      return None
+    return json.loads(self.changes)[0]
 
   def changed_tags(self):
-    changes = json.loads(self.changes)
-    if changes is None:
+    if self.action == 'a':
       return {}
-    tags = json.loads(self.changes)
+    tags = json.loads(self.changes)[1]
     for t in tags:
       if tags[t][0] is None:
         tags[t].append('create')
