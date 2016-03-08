@@ -20,7 +20,11 @@
   <h2>Top Users</h2>
   <ol>
     {% for user in users %}
-    <li>{{ user.user }} ({{user.count}})</li>
+    {% if params.user %}
+    <li>{{ user.user }} ({{user.count}}) <a href="{{ purl(params, user=None) }}">X</a></li>
+    {% else %}
+    <li><a href="{{ purl(params, user=user.user) }}">{{ user.user }}</a> ({{user.count}})</li>
+    {% endif %}
     {% endfor %}
   </ol>
 </div>
@@ -43,8 +47,19 @@
 <div>
   <h2>Changes</h2>
   {% for change in changes %}
-  <div>
+  <div class="change">
     <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.main_tag }}
+    <table>
+      {% set coord = change.changed_coord() %}
+      {% if coord %}
+      <tr class="modify"><td>coord</td><td>{{ coord[0] }}</td><td>{{ coord[1] }}</td></tr>
+      {% endif %}
+      {% for key, value in change.changed_tags().iteritems() %}
+      <tr class="{{ value[2] }}"><td>{{ key }}</td><td>{{ value[0] or '' }}</td><td>{{ value[1] }}</td></tr>
+      {% endfor %}
+    </table>
   </div>
   {% endfor %}
+  {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
+  {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
 </div>

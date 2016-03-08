@@ -1,0 +1,30 @@
+body {
+  font-family: sans-serif;
+  font-size: 12pt;
+}
+
+.change {
+  margin-bottom: 1em;
+}
+
+.change table {
+  margin-left: 2em;
+  font-size: 10pt;
+}
+
+tr.create {
+  background-color: lightgreen;
+}
+
+tr.delete {
+  background-color: pink;
+}
+
+tr.modify {
+  background-color: yellow;
+}
+
+tr.nothing {
+  font-size: 8pt;
+  font-style: italic;
+}
