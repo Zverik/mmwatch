@@ -33,6 +33,10 @@ class Change(peewee.Model):
       return {}
     tags = json.loads(self.changes)[1]
     for t in tags:
+      if self.action == 'c':
+        tags[t] = [None, tags[t]]
+      elif self.action == 'd':
+        tags[t] = [tags[t], None]
       if tags[t][0] is None:
         tags[t].append('create')
       elif tags[t][1] is None:
