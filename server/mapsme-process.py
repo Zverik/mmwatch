@@ -19,7 +19,7 @@ class Change(peewee.Model):
   user = peewee.CharField(max_length=250, index=True)
   version = peewee.CharField(max_length=250)
   timestamp = peewee.DateTimeField(index=True)
-  action = peewee.FixedCharField(max_length=1) # c, d, m, a
+  action = peewee.FixedCharField(max_length=1) # c=created, d=deleted, m=modified, a=anomaly, n=note
   obj_type = peewee.FixedCharField(max_length=1, null=True)
   obj_id = peewee.IntegerField(null=True)
   main_tag = peewee.CharField(max_length=100, null=True)
@@ -29,6 +29,12 @@ class Change(peewee.Model):
   class Meta:
     database = database
     db_table = 'mapsme_change'
+
+class Seen(peewee.Model):
+  """A model for a storage of processed objects."""
+  obj = peewee.TextField(index=True)
+  class Meta:
+    database = database
 
 def download_last_state():
   """Downloads last changeset replication sequence number from the planet website."""
@@ -94,6 +100,19 @@ def obj_to_dict(obj):
   elif obj.tag == 'relation':
     res['refs'] = [(x.get('type'), x.get('ref'), x.get('role')) for x in obj.iterchildren('member')]
   return res
+
+def obj_signature(obj):
+  return ''.join([obj['type'][0], str(obj['id']), '.', str(obj['version'])])
+
+def was_object_processed(obj):
+  """If the object of given version is already processed, skip it."""
+  return Seen.select().where(obj == obj_signature(obj)).count() > 0
+
+def record_object(obj):
+  """If the object of given version is already processed, skip it."""
+  seen = Seen()
+  seen.obj = obj_signature(obj)
+  seen.save()
 
 def create_change(changeset, obj):
   """Creates a Change object, ready to be populated with changes."""
@@ -169,6 +188,7 @@ def record_obj_diff(changeset, obj, prev, anomalies):
       anomalies['way_ref' if obj['type'] == 'way' else 'rel_ref'] += 1
   if ch is not None:
     ch.save()
+    record_object(obj)
 
 def record_changeset_diff(changeset):
   """Received changeset data dict, downloads individual object changes and store changes to a database."""
@@ -180,12 +200,13 @@ def record_changeset_diff(changeset):
   for action in root:
     for obj_xml in action:
       obj = obj_to_dict(obj_xml)
-      if obj['version'] == 1:
-        prev = None
-      else:
-        response2 = urllib2.urlopen('{0}/{1}/{2}/{3}'.format(API_ENDPOINT, obj['type'], obj['id'], obj['version'] - 1))
-        prev = obj_to_dict(etree.parse(response2).getroot()[0])
-      record_obj_diff(changeset, obj, prev, anomalies)
+      if not was_object_processed(obj):
+        if obj['version'] == 1:
+          prev = None
+        else:
+          response2 = urllib2.urlopen('{0}/{1}/{2}/{3}'.format(API_ENDPOINT, obj['type'], obj['id'], obj['version'] - 1))
+          prev = obj_to_dict(etree.parse(response2).getroot()[0])
+        record_obj_diff(changeset, obj, prev, anomalies)
   if sum(anomalies.itervalues()) > 0:
     ch = Change()
     ch.changeset = changeset['id']
@@ -208,7 +229,7 @@ if __name__ == '__main__':
     state = cur_state - 1
 
   database.connect()
-  database.create_tables([Change], safe=True)
+  database.create_tables([Change, Seen], safe=True)
 
   for i in range(state + 1, cur_state + 1):
     print i
