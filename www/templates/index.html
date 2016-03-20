@@ -3,6 +3,7 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 <body>
 <h1>OSM Edits Made With MAPS.ME</h1>
+<div id="filterbar">
 <div id="stats" class="filter">
   <h2>Statistics</h2>
   <ul>
@@ -61,18 +62,32 @@
     {% endfor %}
   </ol>
 </div>
+<div class="filter">
+  <h2>Dates</h2>
+  <div>Note: timezone is UTC.</div>
+  <ul>
+    {% if params.date %}
+    <li>{{ params.date }} <a href="{{ purl(params, date=None) }}">X</a></li>
+    {% else %}
+    {% for d in dates %}
+    <li><a href="{{ purl(params, date=d.timestamp.strftime('%d.%m.%Y')) }}">{{ d.timestamp.strftime('%d.%m.%Y') }}</a> ({{ d.count }})</li>
+    {% endfor %}
+    {% endif %}
+  </ul>
+</div>
+</div>
 <div>
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
-    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }} {{ change.main_tag or '' }}
+    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }} {{ change.main_tag or '' }}
     <table>
       {% set coord = change.changed_coord() %}
       {% if coord %}
-      <tr class="create"><td>coord</td><td>{{ coord[0] }}</td><td>{{ coord[1] }}</td></tr>
+      <tr class="create"><td>coord</td><td></td><td>{{ coord[0] }}, {{ coord[1] }}</td></tr>
       {% endif %}
       {% for key, value in change.changed_tags().iteritems() %}
-      <tr class="{{ value[2] }}"><td>{{ key }}</td><td>{{ value[0] or '' }}</td><td>{{ value[1] or '' }}</td></tr>
+      <tr class="{{ value[2] }}"><td>{{ key }}</td><td>{{ '' if value[0] == value[1] else (value[0] or '') }}</td><td>{{ value[1] or '' }}</td></tr>
       {% endfor %}
     </table>
   </div>

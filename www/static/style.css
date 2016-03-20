@@ -1,6 +1,6 @@
 body {
   font-family: sans-serif;
-  font-size: 12pt;
+  font-size: 11pt;
 }
 
 .change {
@@ -29,6 +29,12 @@ tr.nothing {
   font-style: italic;
 }
 
+#filterbar {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
 .filter {
   display: inline-block;
   margin: 1em 1em 0 0;
@@ -36,5 +42,5 @@ tr.nothing {
 }
 
 h2 {
-  font-size: 14pt;
+  font-size: 12pt;
 }

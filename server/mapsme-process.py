@@ -106,7 +106,7 @@ def obj_signature(obj):
 
 def was_object_processed(obj1):
   """If the object of given version is already processed, skip it."""
-  return Seen.select().where(Seen.obj == obj_signature(obj1)).count() > 0
+  return Seen.select().where(Seen.obj == obj_signature(obj1)).exists()
 
 def record_object(obj1):
   """If the object of given version is already processed, skip it."""

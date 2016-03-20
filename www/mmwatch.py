@@ -2,6 +2,7 @@
 import os, json, peewee
 from flask import Flask, request, render_template, url_for
 from flask.ext.compress import Compress
+from datetime import datetime, timedelta
 import config
 
 app = Flask(__name__)
@@ -97,6 +98,8 @@ def the_one_and_only_page():
   q['tags'] = Change.select(Change.main_tag, peewee.fn.Count(Change.id).alias('count')).group_by(Change.main_tag).order_by(peewee.fn.Count(Change.id).desc())
   q['versions'] = Change.select(Change.version, peewee.fn.Count(Change.id).alias('count')).group_by(Change.version).order_by(peewee.fn.Count(Change.id).desc())
   q['stat_src'] = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
+  q['dates'] = Change.select(Change.timestamp, peewee.fn.Count(Change.id).alias('count')).group_by(Change.timestamp.day).order_by(-Change.id)
+  # TODO: debug timezones
 
   # Apply filters
   for k in q:
@@ -110,8 +113,12 @@ def the_one_and_only_page():
       else:
         q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') & ~Change.version.startswith('MAPS.ME android'))
     if not nolimit:
-      if k in ('users', 'tags', 'versions'):
+      if k in ('users', 'tags', 'versions', 'dates'):
         q[k] = q[k].limit(config.TOP)
+    if date:
+      pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
+      pdate1 = pdate + timedelta(days=1)
+      q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
 
   # Calculate statistics
   stats = {}
@@ -135,7 +142,20 @@ def the_one_and_only_page():
       stats['relations'] += stat.count
   stats['pages'] = (stats['total'] + config.PAGE_SIZE - 1) / config.PAGE_SIZE
 
-  return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], params=params, purl=purl)
+  # List of dates for filtering
+  dates = []
+  for row in q['dates']:
+    dates.append(row.timestamp.strftime('%d.%m.%Y'))
+  if False:
+    curdate = datetime.now()
+    earliest = Change.select(Change.timestamp).order_by(Change.id).limit(1).get().timestamp - timedelta(days=1)
+    for n in range(100 if nolimit else config.TOP):
+      if curdate < earliest:
+        break
+      dates.append(curdate.strftime('%d.%m.%Y'))
+      curdate -= timedelta(days=1)
+
+  return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], dates=q['dates'], params=params, purl=purl)
 
 if __name__ == '__main__':
   app.run(threaded=True)
