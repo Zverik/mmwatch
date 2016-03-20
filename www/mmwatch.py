@@ -23,6 +23,10 @@ class Change(peewee.Model):
   address = peewee.BooleanField(default=False)
   changes = peewee.TextField()
 
+  def explain_action(self):
+    explains = { 'a': 'done smth strange', 'c': 'created', 'd': 'deleted', 'm': 'modified', 'n': 'left a note' }
+    return explains[self.action]
+
   def changed_coord(self):
     if self.action == 'a':
       return None

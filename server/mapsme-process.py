@@ -10,7 +10,7 @@ database = peewee.SqliteDatabase(os.path.join(path, 'mapsme-changes.db'))
 STATE_FILENAME = os.path.join(path, 'mapsme-state.txt')
 REPLICATION_BASE_URL = 'http://planet.openstreetmap.org/replication/changesets'
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6'
-MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'emergency', 'barrier', 'highway', 'entrance', 'building')
+MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier', 'highway', 'leisure', 'entrance', 'building')
 INTERESTING_TAGS = list(MAIN_TAGS) + ['name']
 
 class Change(peewee.Model):
@@ -104,14 +104,14 @@ def obj_to_dict(obj):
 def obj_signature(obj):
   return ''.join([obj['type'][0], str(obj['id']), '.', str(obj['version'])])
 
-def was_object_processed(obj):
+def was_object_processed(obj1):
   """If the object of given version is already processed, skip it."""
-  return Seen.select().where(obj == obj_signature(obj)).count() > 0
+  return Seen.select().where(Seen.obj == obj_signature(obj1)).count() > 0
 
-def record_object(obj):
+def record_object(obj1):
   """If the object of given version is already processed, skip it."""
   seen = Seen()
-  seen.obj = obj_signature(obj)
+  seen.obj = obj_signature(obj1)
   seen.save()
 
 def create_change(changeset, obj):

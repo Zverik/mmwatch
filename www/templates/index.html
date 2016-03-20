@@ -48,7 +48,7 @@
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
-    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.main_tag }}
+    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }} {{ change.main_tag }}
     <table>
       {% set coord = change.changed_coord() %}
       {% if coord %}
