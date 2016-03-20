@@ -79,27 +79,45 @@ def the_one_and_only_page():
   user = request.args.get('user', None)
   if user is not None:
     params['user'] = user
+  platform = request.args.get('platform', None)
+  if platform is not None:
+    params['platform'] = platform
+  version = request.args.get('version', None)
+  if version is not None:
+    params['version'] = version
+  date = request.args.get('date', None)
+  if date is not None:
+    params['date'] = date
+  nolimit = request.args.get('nolimit', None) is not None
 
   # Construct queries
-  changes = Change.select().order_by(Change.id.desc()).paginate(params['page'], config.PAGE_SIZE)
-  users = Change.select(Change.user, peewee.fn.Count(Change.id).alias('count')).group_by(Change.user).order_by(peewee.fn.Count(Change.id).desc()).limit(config.TOP)
-  tags = Change.select(Change.main_tag, peewee.fn.Count(Change.id).alias('count')).group_by(Change.main_tag).order_by(peewee.fn.Count(Change.id).desc()).limit(config.TOP)
-  versions = Change.select(Change.version, peewee.fn.Count(Change.id).alias('count')).group_by(Change.version).order_by(peewee.fn.Count(Change.id).desc()).limit(config.TOP)
-  stat_src = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
+  q = {}
+  q['changes'] = Change.select().order_by(Change.id.desc()).paginate(params['page'], config.PAGE_SIZE)
+  q['users'] = Change.select(Change.user, peewee.fn.Count(Change.id).alias('count')).group_by(Change.user).order_by(peewee.fn.Count(Change.id).desc())
+  q['tags'] = Change.select(Change.main_tag, peewee.fn.Count(Change.id).alias('count')).group_by(Change.main_tag).order_by(peewee.fn.Count(Change.id).desc())
+  q['versions'] = Change.select(Change.version, peewee.fn.Count(Change.id).alias('count')).group_by(Change.version).order_by(peewee.fn.Count(Change.id).desc())
+  q['stat_src'] = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
 
   # Apply filters
-  if user:
-    changes = changes.where(Change.user == user)
-    users = users.where(Change.user == user)
-    tags = tags.where(Change.user == user)
-    versions = versions.where(Change.user == user)
-    stat_src = stat_src.where(Change.user == user)
+  for k in q:
+    if user:
+      q[k] = q[k].where(Change.user == user)
+    if version:
+      q[k] = q[k].where(Change.version == version)
+    if platform:
+      if platform != 'other':
+        q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
+      else:
+        q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') & ~Change.version.startswith('MAPS.ME android'))
+    if not nolimit:
+      if k in ('users', 'tags', 'versions'):
+        q[k] = q[k].limit(config.TOP)
 
   # Calculate statistics
   stats = {}
   stats['created'] = stats['deleted'] = stats['modified'] = stats['anomalies'] = 0
   stats['nodes'] = stats['ways'] = stats['relations'] = stats['total'] = 0
-  for stat in stat_src:
+  for stat in q['stat_src']:
     stats['total'] += stat.count
     if stat.action == 'c':
       stats['created'] += stat.count
@@ -117,7 +135,7 @@ def the_one_and_only_page():
       stats['relations'] += stat.count
   stats['pages'] = (stats['total'] + config.PAGE_SIZE - 1) / config.PAGE_SIZE
 
-  return render_template('index.html', stats=stats, changes=changes, users=users, tags=tags, versions=versions, params=params, purl=purl)
+  return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], params=params, purl=purl)
 
 if __name__ == '__main__':
   app.run(threaded=True)

@@ -3,7 +3,7 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 <body>
 <h1>OSM Edits Made With MAPS.ME</h1>
-<div id="stats">
+<div id="stats" class="filter">
   <h2>Statistics</h2>
   <ul>
     <li>Total: {{ stats.total }}</li>
@@ -16,7 +16,7 @@
     <li>Relations: {{stats.relations }}</li>
   </ul>
 </div>
-<div>
+<div class="filter">
   <h2>Top Users</h2>
   <ol>
     {% for user in users %}
@@ -27,8 +27,11 @@
     {% endif %}
     {% endfor %}
   </ol>
+  {% if not params.nolimit %}
+  <div><a href="{{ purl(params, nolimit=1) }}">Show all</a></div>
+  {% endif %}
 </div>
-<div>
+<div class="filter">
   <h2>Top Main Tags</h2>
   <ol>
     {% for tag in tags %}
@@ -36,11 +39,25 @@
     {% endfor %}
   </ol>
 </div>
-<div>
+<div class="filter">
   <h2>Versions</h2>
+  <div>
+    Filter:
+    {% if params.platform %}
+    {{ params.platform }} <a href="{{ purl(params, platform=None) }}">X</a>
+    {% else %}
+    {% for p in ('ios', 'android', 'other') %}
+    <a href="{{ purl(params, platform=p) }}">{{ p }}</a>
+    {% endfor %}
+    {% endif %}
+  </div>
   <ol>
     {% for v in versions %}
-    <li>{{ v.version }} ({{v.count}})</li>
+    {% if params.version %}
+    <li>{{ v.version }} ({{v.count}}) <a href="{{ purl(params, version=None) }}">X</a></li>
+    {% else %}
+    <li><a href="{{ purl(params, version=v.version) }}">{{ v.version }}</a> ({{v.count}})</li>
+    {% endif %}
     {% endfor %}
   </ol>
 </div>
@@ -48,7 +65,7 @@
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
-    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }} {{ change.main_tag }}
+    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp }} in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }} {{ change.main_tag or '' }}
     <table>
       {% set coord = change.changed_coord() %}
       {% if coord %}

@@ -28,3 +28,13 @@ tr.nothing {
   font-size: 8pt;
   font-style: italic;
 }
+
+.filter {
+  display: inline-block;
+  margin: 1em 1em 0 0;
+  vertical-align: top;
+}
+
+h2 {
+  font-size: 14pt;
+}
