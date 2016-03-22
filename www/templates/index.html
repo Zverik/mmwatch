@@ -82,7 +82,13 @@
   <div class="change">
     <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }}
     in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }}
-    {% if change.obj_type %}<a href="https://www.openstreetmap.org/{{ {'n':'node', 'w':'way', 'r':'relation'}[change.obj_type] }}/{{ change.obj_id }}">{{ change.main_tag or '' }}</a>{% endif %}
+    {% if change.obj_type %}
+    <a href="https://www.openstreetmap.org/{{ {'n':'node', 'w':'way', 'r':'relation'}[change.obj_type] }}/{{ change.obj_id }}">{{ change.main_tag or '' }}</a>
+    <sup>
+      <a href="http://127.0.0.1:8111/load_object?objects={{ change.obj_type }}{{ change.obj_id }}" target="josmframe">JOSM</a>
+      <a href="http://level0.osmz.ru/?url={{ change.obj_type }}{{ change.obj_id }}" target="level0">Level0</a>
+    </sup>
+    {% endif %}
     <table>
       {% set coord = change.changed_coord() %}
       {% if coord %}
@@ -97,3 +103,4 @@
   {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
   {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
 </div>
+<iframe height="0" width="0" name="josmframe" style="visibility:hidden; display:none;" src="about:blank"></iframe>
