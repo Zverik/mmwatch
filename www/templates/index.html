@@ -86,7 +86,7 @@
     <a href="https://www.openstreetmap.org/{{ {'n':'node', 'w':'way', 'r':'relation'}[change.obj_type] }}/{{ change.obj_id }}">{{ change.main_tag or '' }}</a>
     <sup>
       <a href="http://127.0.0.1:8111/load_object?objects={{ change.obj_type }}{{ change.obj_id }}" target="josmframe">JOSM</a>
-      <a href="http://level0.osmz.ru/?url={{ change.obj_type }}{{ change.obj_id }}" target="level0">Level0</a>
+      <a href="http://level0.osmz.ru/?url={{ change.obj_type }}{{ change.obj_id }}!" target="level0">Level0</a>
     </sup>
     {% endif %}
     <table>
