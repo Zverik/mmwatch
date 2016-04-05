@@ -10,7 +10,7 @@ database = peewee.SqliteDatabase(os.path.join(path, 'mapsme-changes.db'))
 STATE_FILENAME = os.path.join(path, 'mapsme-state.txt')
 REPLICATION_BASE_URL = 'http://planet.openstreetmap.org/replication/changesets'
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6'
-MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier', 'highway', 'leisure', 'entrance', 'building')
+MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier', 'highway', 'leisure', 'waterway', 'entrance', 'building')
 INTERESTING_TAGS = list(MAIN_TAGS) + ['name']
 
 class Change(peewee.Model):
