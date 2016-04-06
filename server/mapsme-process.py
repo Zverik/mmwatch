@@ -120,7 +120,7 @@ def create_change(changeset, obj):
   main = None
   for k in MAIN_TAGS:
     if k in obj['tags']:
-      main = '{0}={1}'.format(k, obj['tags'][k])
+      main = '{0}={1}'.format(k, obj['tags'][k].encode('utf-8'))
       break
   if main is None:
     return None
