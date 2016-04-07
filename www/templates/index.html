@@ -90,10 +90,6 @@
     </sup>
     {% endif %}
     <table>
-      {% set coord = change.changed_coord() %}
-      {% if coord %}
-      <tr class="create"><td>coord</td><td></td><td>{{ coord[0] }}, {{ coord[1] }}</td></tr>
-      {% endif %}
       {% for key, value in change.changed_tags().iteritems() %}
       <tr class="{{ value[2] }}"><td>{{ key }}</td><td>{{ '' if value[0] == value[1] else (value[0] or '') }}</td><td>{{ value[1] or '' }}</td></tr>
       {% endfor %}

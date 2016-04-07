@@ -165,7 +165,7 @@ def record_obj_diff(changeset, obj, prev, anomalies):
       anomalies[prev['type'][0] + 'd'] += 1
   else:
     # Both objects are present, compare them
-    if 'coords' not in obj or obj['coords'] == prev['coords']:
+    if 'coords' not in obj:
       coords = None
     else:
       coords = (prev['coords'], obj['coords'])

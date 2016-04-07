@@ -31,7 +31,10 @@ class Change(peewee.Model):
   def changed_coord(self):
     if self.action == 'a':
       return None
-    return json.loads(self.changes)[0]
+    c = json.loads(self.changes)[0]
+    if self.action == 'm':
+      return c[1]
+    return c
 
   def changed_tags(self):
     if self.action == 'a':
