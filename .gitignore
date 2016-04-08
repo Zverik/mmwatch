@@ -2,3 +2,4 @@
 mapsme-state.txt
 mapsme-changes.db
 mapsme-process.log
+venv/
