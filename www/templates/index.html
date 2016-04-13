@@ -94,7 +94,7 @@
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
-    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a> (<a href="{{ purl(params, user=change.user) }}">F</a>) at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }}
+    <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a><sup><a href="{{ purl(params, user=change.user) }}">&#9875;</a> at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }}
     in <a href="https://www.openstreetmap.org/changeset/{{ change.changeset }}">{{ change.changeset }}</a><sup><a href="{{ purl(params, changeset=change.changeset) }}">&#9875;</a></sup>: {{ change.explain_action() }}
     {% if change.obj_type %}
     <a href="https://www.openstreetmap.org/{{ {'n':'node', 'w':'way', 'r':'relation'}[change.obj_type] }}/{{ change.obj_id }}">{{ change.main_tag or '' }}</a>
