@@ -8,10 +8,23 @@
   <h2>Statistics</h2>
   <ul>
     <li>Total: {{ stats.total }}</li>
-    <li>Created: {{ stats.created }}</li>
-    <li>Deleted: {{ stats.deleted }}</li>
-    <li>Modified: {{ stats.modified }}</li>
-    <li>Anomalies: {{ stats.anomalies }}</li>
+    {% if params.action == 'c' %}
+    <li>Created: {{ stats.created }} <a href="{{ purl(params, action=None) }}">X</a></li>
+    {% elif params.action == 'd' %}
+    <li>Deleted: {{ stats.deleted }} <a href="{{ purl(params, action=None) }}">X</a></li>
+    {% elif params.action == 'm' %}
+    <li>Modified: {{ stats.modified }} <a href="{{ purl(params, action=None) }}">X</a></li>
+    {% elif params.action == 'n' %}
+    <li>Notes: {{ stats.notes }} <a href="{{ purl(params, action=None) }}">X</a></li>
+    {% elif params.action == 'a' %}
+    <li>Anomalies: {{ stats.anomalies }} <a href="{{ purl(params, action=None) }}">X</a></li>
+    {% else %}
+    <li>Created: <a href="{{ purl(params, action='m') }}">{{ stats.created }}</a></li>
+    <li>Deleted: <a href="{{ purl(params, action='m') }}">{{ stats.deleted }}</a></li>
+    <li>Modified: <a href="{{ purl(params, action='m') }}">{{ stats.modified }}</a></li>
+    <li>Notes: <a href="{{ purl(params, action='m') }}">{{ stats.notes }}</a></li>
+    <li>Anomalies: <a href="{{ purl(params, action='m') }}">{{ stats.anomalies }}</a></li>
+    {% endif %}
     <li>Nodes: {{ stats.nodes }}</li>
     <li>Ways: {{ stats.ways }}</li>
     <li>Relations: {{stats.relations }}</li>

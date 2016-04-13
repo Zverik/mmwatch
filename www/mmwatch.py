@@ -93,6 +93,9 @@ def the_one_and_only_page():
   if date is not None:
     params['date'] = date
   nolimit = request.args.get('nolimit', None) is not None
+  action = request.args.get('action', None)
+  if action is not None:
+    params['action'] = action
 
   # Construct queries
   q = {}
@@ -110,6 +113,8 @@ def the_one_and_only_page():
       q[k] = q[k].where(Change.user == user)
     if version:
       q[k] = q[k].where(Change.version == version)
+    if action:
+      q[k] = q[k].where(Change.action == action)
     if platform:
       if platform != 'other':
         q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
@@ -135,6 +140,8 @@ def the_one_and_only_page():
       stats['deleted'] += stat.count
     elif stat.action == 'm':
       stats['modified'] += stat.count
+    elif stat.action == 'n':
+      stats['notes'] += stat.count
     elif stat.action == 'a':
       stats['anomalies'] += stat.count
     if stat.obj_type == 'n':
@@ -159,6 +166,8 @@ def the_one_and_only_page():
       dates.append(curdate.strftime('%d.%m.%Y'))
       curdate -= timedelta(days=1)
 
+  if params['page'] == 1:
+    del params['page']
   return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], dates=q['dates'], params=params, purl=purl)
 
 if __name__ == '__main__':
