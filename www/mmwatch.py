@@ -72,6 +72,8 @@ def purl(params, **kwargs):
   p2 = params.copy()
   for k, v in kwargs.iteritems():
     p2[k] = v
+  if 'page' in p2 and p2['page'] <= 1:
+    del p2['page']
   return url_for('the_one_and_only_page', **p2)
 
 @app.route('/')
@@ -166,8 +168,6 @@ def the_one_and_only_page():
       dates.append(curdate.strftime('%d.%m.%Y'))
       curdate -= timedelta(days=1)
 
-  if params['page'] == 1:
-    del params['page']
   return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], dates=q['dates'], params=params, purl=purl)
 
 if __name__ == '__main__':
