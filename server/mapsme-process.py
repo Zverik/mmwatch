@@ -8,7 +8,7 @@ from datetime import datetime
 STATE_FILENAME = os.path.join(path, 'mapsme-state.txt')
 REPLICATION_BASE_URL = 'http://planet.openstreetmap.org/replication/changesets'
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6'
-MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier', 'highway', 'leisure', 'waterway', 'entrance', 'building')
+MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier', 'highway', 'leisure', 'waterway', 'natural', 'place', 'entrance', 'building')
 INTERESTING_TAGS = list(MAIN_TAGS) + ['name']
 
 def download_last_state():
@@ -98,7 +98,7 @@ def create_change(changeset, obj):
       main = '{0}={1}'.format(k, obj['tags'][k].encode('utf-8'))
       break
   if main is None:
-    return None
+    main = 'unknown'
 
   ch = Change()
   ch.changeset = changeset['id']
