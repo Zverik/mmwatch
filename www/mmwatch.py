@@ -98,6 +98,9 @@ def the_one_and_only_page():
   action = request.args.get('action', None)
   if action is not None:
     params['action'] = action
+  changeset = request.args.get('changeset', None)
+  if changeset is not None and changeset.isdigit():
+    params['changeset'] = changeset
 
   # Construct queries
   q = {}
@@ -117,6 +120,8 @@ def the_one_and_only_page():
       q[k] = q[k].where(Change.version == version)
     if action:
       q[k] = q[k].where(Change.action == action)
+    if 'changeset' in params:
+      q[k] = q[k].where(Change.changeset == params['changeset'])
     if platform:
       if platform != 'other':
         q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
