@@ -1,7 +1,8 @@
 import os.path, sys
 import peewee
 
-path = os.path.dirname(sys.argv[0]) if len(sys.argv) < 2 else sys.argv[1]
+#path = os.path.dirname(sys.argv[0]) if len(sys.argv) < 2 else sys.argv[1]
+path = os.path.dirname(sys.argv[0])
 database = peewee.SqliteDatabase(os.path.join(path, 'mapsme-changes.db'))
 
 class Change(peewee.Model):

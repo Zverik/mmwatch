@@ -144,6 +144,7 @@ def the_one_and_only_page():
     elif stat.obj_type == 'r':
       stats['relations'] += stat.count
   stats['pages'] = (stats['total'] + config.PAGE_SIZE - 1) / config.PAGE_SIZE
+  stats['users'] = q['users'].count(clear_limit=True)
 
   # List of dates for filtering
   dates = []
