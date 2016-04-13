@@ -132,7 +132,7 @@ def the_one_and_only_page():
 
   # Calculate statistics
   stats = {}
-  stats['created'] = stats['deleted'] = stats['modified'] = stats['anomalies'] = 0
+  stats['created'] = stats['deleted'] = stats['modified'] = stats['notes'] = stats['anomalies'] = 0
   stats['nodes'] = stats['ways'] = stats['relations'] = stats['total'] = 0
   for stat in q['stat_src']:
     stats['total'] += stat.count

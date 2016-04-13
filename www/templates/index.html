@@ -19,11 +19,11 @@
     {% elif params.action == 'a' %}
     <li>Anomalies: {{ stats.anomalies }} <a href="{{ purl(params, action=None) }}">X</a></li>
     {% else %}
-    <li>Created: <a href="{{ purl(params, action='m') }}">{{ stats.created }}</a></li>
-    <li>Deleted: <a href="{{ purl(params, action='m') }}">{{ stats.deleted }}</a></li>
+    <li>Created: <a href="{{ purl(params, action='c') }}">{{ stats.created }}</a></li>
+    <li>Deleted: <a href="{{ purl(params, action='d') }}">{{ stats.deleted }}</a></li>
     <li>Modified: <a href="{{ purl(params, action='m') }}">{{ stats.modified }}</a></li>
-    <li>Notes: <a href="{{ purl(params, action='m') }}">{{ stats.notes }}</a></li>
-    <li>Anomalies: <a href="{{ purl(params, action='m') }}">{{ stats.anomalies }}</a></li>
+    <li>Notes: <a href="{{ purl(params, action='n') }}">{{ stats.notes }}</a></li>
+    <li>Anomalies: <a href="{{ purl(params, action='a') }}">{{ stats.anomalies }}</a></li>
     {% endif %}
     <li>Nodes: {{ stats.nodes }}</li>
     <li>Ways: {{ stats.ways }}</li>
