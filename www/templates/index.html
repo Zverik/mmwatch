@@ -110,7 +110,12 @@
     </table>
   </div>
   {% endfor %}
-  {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
-  {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
+  <div class="navigation">
+    {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
+    {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
+  </div>
+  <div class="download">
+    <a href="{{ purl(params, export=1) }}">Download GeoJSON</a>
+  </div>
 </div>
 <iframe height="0" width="0" name="josmframe" style="visibility:hidden; display:none;" src="about:blank"></iframe>

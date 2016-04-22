@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os, json, peewee
-from flask import Flask, request, render_template, url_for
+from flask import Flask, send_file, request, render_template, url_for
 from flask.ext.compress import Compress
 from datetime import datetime, timedelta
+from StringIO import StringIO
 import config
 
 app = Flask(__name__)
@@ -32,7 +33,7 @@ class Change(peewee.Model):
     if self.action == 'a':
       return None
     c = json.loads(self.changes)[0]
-    if self.action == 'm':
+    if self.action == 'm' and c is not None:
       return c[1]
     return c
 
@@ -144,6 +145,20 @@ def the_one_and_only_page():
       q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
     if mapsme5:
       q[k] = q[k].where(Change.user << mmlist)
+
+  # Export geojson if export option is set
+  if request.args.get('export', None) == '1':
+    features = []
+    for ch in q['changes'].limit(3000):
+      coord = ch.changed_coord()
+      if coord is None:
+        continue
+      props = { 'obj_type': ch.obj_type, 'obj_id': ch.obj_id, 'action': ch.action, 'main_tag': ch.main_tag, 'user': ch.user }
+      f = { 'type': 'Feature', 'properties': props, 'geometry': { 'type': 'Point', 'coordinates': [float(coord[0]), float(coord[1])] } }
+      features.append(f)
+    content = json.dumps({ 'type': 'FeatureCollection', 'features': features }, ensure_ascii=False)
+    return send_file(StringIO(str(content)), mimetype='Content-Type: application/vnd.geo+json',
+        attachment_filename='mapsme_changes.geojson', as_attachment=True)
 
   # Calculate statistics
   stats = {}
