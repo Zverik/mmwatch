@@ -116,6 +116,22 @@ def has_address_tags(tags):
       return True
   return False
 
+def find_coord(obj_type, obj_id):
+  """Queries OSM API to find a coord for an object."""
+  try:
+    response = urllib2.urlopen('{0}/{1}/{2}'.format(API_ENDPOINT, obj_type, obj_id))
+  except urllib2.HTTPError as e:
+    if e.code == 410:
+      return None
+    raise e
+  obj = etree.parse(response).getroot()[0]
+  if obj.tag == 'node':
+    return (obj.get('lon'), obj.get('lat'))
+  else:
+    # Get coordinate of the first node
+    nd = obj.find('nd')
+    return find_coord('node', nd.get('ref'))
+
 def record_obj_diff(changeset, obj, prev, anomalies):
   ch = None
   if prev is None or prev['deleted']:
@@ -141,7 +157,8 @@ def record_obj_diff(changeset, obj, prev, anomalies):
   else:
     # Both objects are present, compare them
     if 'coords' not in obj:
-      coords = None
+      tmpc = find_coord(obj['type'], obj['id'])
+      coords = (tmpc, tmpc)
     else:
       coords = (prev['coords'], obj['coords'])
     tags = {}
@@ -216,5 +233,4 @@ if __name__ == '__main__':
     except Exception as e:
       print 'Failed to download and process replication {0}: {1}'.format(i, e)
       raise e
-      break
     write_last_state(i)
