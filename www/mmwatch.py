@@ -156,7 +156,7 @@ def the_one_and_only_page():
       props = { 'obj_type': ch.obj_type, 'obj_id': ch.obj_id, 'action': ch.action, 'main_tag': ch.main_tag, 'user': ch.user }
       f = { 'type': 'Feature', 'properties': props, 'geometry': { 'type': 'Point', 'coordinates': [float(coord[0]), float(coord[1])] } }
       features.append(f)
-    content = json.dumps({ 'type': 'FeatureCollection', 'features': features }, ensure_ascii=False)
+    content = json.dumps({ 'type': 'FeatureCollection', 'features': features })
     return send_file(StringIO(str(content)), mimetype='Content-Type: application/vnd.geo+json',
         attachment_filename='mapsme_changes.geojson', as_attachment=True)
 
