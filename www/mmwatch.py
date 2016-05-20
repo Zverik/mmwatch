@@ -23,7 +23,7 @@ class Change(peewee.Model):
   obj_id = peewee.IntegerField(null=True)
   main_tag = peewee.CharField(max_length=100, null=True)
   address = peewee.BooleanField(default=False)
-  processed = IntegerField(null=True)
+  processed = peewee.IntegerField(null=True)
   changes = peewee.TextField()
 
   def explain_action(self):
