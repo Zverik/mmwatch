@@ -29,6 +29,14 @@ from mmwatch import app as application
 Now you need to add the WSGI application to your web server. Refer to [this manual](http://flask.pocoo.org/docs/0.10/deploying/)
 or maybe [this one about Gunicorn](https://www.digitalocean.com/community/tutorials/how-to-deploy-python-wsgi-apps-using-gunicorn-http-server-behind-nginx).
 
+## Switching to Another Database
+
+By default, mmwatch uses an SQLite database for keeping track of edits.
+You can replace it with MySQL or PostgreSQL, if you like. To do that,
+open `server/db.py` and `www/mmwatch.py` and replace lines with `SqliteDatabase` with
+`MySQLDatabase()` or `PostgresqlDatabase()`. See [this section](http://docs.peewee-orm.com/en/latest/peewee/database.html#vendor-specific-parameters)
+for their arguments.
+
 ## API
 
 There is almost no API in the service, except `/user?name=<OSM User Name>` call,
