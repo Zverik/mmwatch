@@ -18,11 +18,12 @@ class Change(peewee.Model):
   user = peewee.CharField(max_length=250, index=True)
   version = peewee.CharField(max_length=250)
   timestamp = peewee.DateTimeField(index=True)
-  action = peewee.FixedCharField(max_length=1) # c, d, m, a
+  action = peewee.FixedCharField(max_length=1, index=True) # c, d, m, a, a
   obj_type = peewee.FixedCharField(max_length=1, null=True)
   obj_id = peewee.IntegerField(null=True)
   main_tag = peewee.CharField(max_length=100, null=True)
   address = peewee.BooleanField(default=False)
+  processed = IntegerField(null=True)
   changes = peewee.TextField()
 
   def explain_action(self):
@@ -58,7 +59,6 @@ class Change(peewee.Model):
 
   class Meta:
     database = database
-    db_table = 'mapsme_change'
 
 @app.before_request
 def before_request():

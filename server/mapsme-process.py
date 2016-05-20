@@ -3,7 +3,7 @@ import sys, os, urllib2, re, gzip, json
 from db import *
 from lxml import etree
 from StringIO import StringIO
-from datetime import datetime
+from datetime import datetime, date
 
 STATE_FILENAME = os.path.join(path, 'mapsme-state.txt')
 REPLICATION_BASE_URL = 'http://planet.openstreetmap.org/replication/changesets'
@@ -88,6 +88,18 @@ def record_object(obj1):
   seen = Seen()
   seen.obj = obj_signature(obj1)
   seen.save()
+
+def record_user_edit(name):
+  """Update user edits count."""
+  try:
+    user = User.get(User.user == name)
+  except User.DoesNotExist:
+    user = User()
+    user.user = name
+    user.edits = 0
+    user.joined = date.today()
+  user.edits += 1
+  user.save()
 
 def create_change(changeset, obj):
   """Creates a Change object, ready to be populated with changes."""
@@ -181,6 +193,7 @@ def record_obj_diff(changeset, obj, prev, anomalies):
   if ch is not None:
     ch.save()
     record_object(obj)
+    record_user_edit(changeset['user'])
 
 def record_changeset_diff(changeset):
   """Received changeset data dict, downloads individual object changes and store changes to a database."""
@@ -209,6 +222,20 @@ def record_changeset_diff(changeset):
     ch.changes = json.dumps(anomalies)
     ch.save()
 
+def update_user_ranks():
+  """Updates rank fields for users, so they are sorted in the descending order. O(n^2) complexity!"""
+  with database.atomic():
+    query = User.select().order_by(-User.edits, User.joined)
+    rank = count = 1
+    last_edits = -1
+    for user in query:
+      if user.edits != last_edits:
+        rank = count
+        last_edits = user.edits
+      user.rank = rank
+      user.save()
+      count += 1
+
 if __name__ == '__main__':
   try:
     cur_state = download_last_state()
@@ -221,7 +248,7 @@ if __name__ == '__main__':
     state = cur_state - 1
 
   database.connect()
-  database.create_tables([Change, Seen], safe=True)
+  database.create_tables([Change, Seen, User], safe=True)
 
   for i in range(state + 1, cur_state + 1):
     print i
@@ -234,3 +261,4 @@ if __name__ == '__main__':
       print 'Failed to download and process replication {0}: {1}'.format(i, e)
       raise e
     write_last_state(i)
+  update_user_ranks()
