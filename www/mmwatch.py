@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os, json, peewee
-from flask import Flask, send_file, request, render_template, url_for
+from flask import Flask, send_file, request, render_template, url_for, abort, jsonify
 from flask.ext.compress import Compress
 from datetime import datetime, timedelta
 from StringIO import StringIO
@@ -60,6 +60,16 @@ class Change(peewee.Model):
   class Meta:
     database = database
 
+class User(peewee.Model):
+  """A model for user stats."""
+  user = peewee.CharField(max_length=250, unique=True)
+  edits = peewee.IntegerField()
+  rank = peewee.IntegerField(default=0)
+  joined = peewee.DateField()
+
+  class Meta:
+    database = database
+
 @app.before_request
 def before_request():
   database.connect()
@@ -68,6 +78,17 @@ def before_request():
 def teardown(exception):
   if not database.is_closed():
     database.close()
+
+@app.route('/user')
+def get_user_rating():
+  name = request.args.get('name')
+  if name is None:
+    abort(400)
+  try:
+    user = User.get(User.user == name)
+  except User.DoesNotExist:
+    abort(404)
+  return jsonify(name=user.user, rank=user.rank, edits=user.edits, joined=user.joined.isoformat())
 
 def purl(params, **kwargs):
   p2 = params.copy()
