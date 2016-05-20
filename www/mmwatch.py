@@ -136,9 +136,11 @@ def the_one_and_only_page():
         q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
       else:
         q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') & ~Change.version.startswith('MAPS.ME android'))
-    if not nolimit:
-      if k in ('users', 'tags', 'versions', 'dates'):
+    if k in ('users', 'tags', 'versions', 'dates'):
+      if not nolimit:
         q[k] = q[k].limit(config.TOP)
+      else:
+        q[k] = q[k].limit(1000)
     if date:
       pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
       pdate1 = pdate + timedelta(days=1)
