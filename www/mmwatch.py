@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os, json, peewee
-from flask import Flask, send_file, request, render_template, url_for, abort, jsonify
+from flask import Flask, send_file, request, render_template, url_for, abort, jsonify, Response
 from flask.ext.compress import Compress
 from datetime import datetime, timedelta
 from StringIO import StringIO
@@ -84,10 +84,19 @@ def get_user_rating():
   name = request.args.get('name')
   if name is None:
     abort(400)
+  fmt = request.args.get('format', 'json')
   try:
     user = User.get(User.user == name)
   except User.DoesNotExist:
     abort(404)
+  if fmt == 'xml':
+    def quoteattr(s):
+      return '"{0}"'.format(str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;'))
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<mmwatch>\n'
+    for field in (('name', user.user), ('rank', user.rank), ('edits', user.edits), ('joined', user.joined.isoformat())):
+      xml = xml + '  <{0} value={1} />\n'.format(field[0], quoteattr(field[1]))
+    xml = xml + '</mmwatch>'
+    return Response(xml, mimetype='application/xml')
   return jsonify(name=user.user, rank=user.rank, edits=user.edits, joined=user.joined.isoformat())
 
 def purl(params, **kwargs):
