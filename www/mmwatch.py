@@ -148,7 +148,7 @@ def the_one_and_only_page():
   q['tags'] = Change.select(Change.main_tag, peewee.fn.Count(Change.id).alias('count')).group_by(Change.main_tag).order_by(peewee.fn.Count(Change.id).desc())
   q['versions'] = Change.select(Change.version, peewee.fn.Count(Change.id).alias('count')).group_by(Change.version).order_by(peewee.fn.Count(Change.id).desc())
   q['stat_src'] = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
-  q['dates'] = Change.select(Change.timestamp, peewee.fn.Count(Change.id).alias('count')).group_by(database.truncate_date('day', Change.timestamp)).order_by(-Change.id)
+  q['dates'] = Change.select(Change.timestamp, peewee.fn.Count(Change.id).alias('count'), peewee.fn.Count(peewee.fn.Distinct(Change.user)).alias('users')).group_by(database.truncate_date('day', Change.timestamp)).order_by(-Change.id)
 
   # Apply filters
   for k in q:

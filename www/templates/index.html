@@ -84,7 +84,7 @@
     <li>{{ params.date }} <a href="{{ purl(params, date=None) }}">X</a></li>
     {% else %}
     {% for d in dates %}
-    <li><a href="{{ purl(params, date=d.timestamp.strftime('%d.%m.%Y')) }}">{{ d.timestamp.strftime('%d.%m.%Y') }}</a> ({{ d.count }})</li>
+    <li><a href="{{ purl(params, date=d.timestamp.strftime('%d.%m.%Y')) }}">{{ d.timestamp.strftime('%d.%m.%Y') }}</a> ({{ d.count }} by {{ d.users }})</li>
     {% endfor %}
     {% endif %}
   </ul>
