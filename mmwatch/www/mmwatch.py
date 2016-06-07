@@ -1,74 +1,14 @@
-#!/usr/bin/env python
 import os, json, peewee
 from flask import Flask, send_file, request, render_template, url_for, abort, jsonify, Response
-from flask.ext.compress import Compress
+from flask_compress import Compress
 from datetime import datetime, timedelta
 from StringIO import StringIO
 import config
+from db import database, Change, User
 
 app = Flask(__name__)
 app.debug = config.DEBUG
 Compress(app)
-
-database = peewee.SqliteDatabase(os.path.join(config.DATABASE_PATH, 'mapsme-changes.db'))
-
-class Change(peewee.Model):
-  """A model for the change. Just a single table."""
-  changeset = peewee.IntegerField()
-  user = peewee.CharField(max_length=250, index=True)
-  version = peewee.CharField(max_length=250)
-  timestamp = peewee.DateTimeField(index=True)
-  action = peewee.FixedCharField(max_length=1, index=True) # c, d, m, a, a
-  obj_type = peewee.FixedCharField(max_length=1, null=True)
-  obj_id = peewee.IntegerField(null=True)
-  main_tag = peewee.CharField(max_length=100, null=True)
-  address = peewee.BooleanField(default=False)
-  processed = peewee.IntegerField(null=True)
-  changes = peewee.TextField()
-
-  def explain_action(self):
-    explains = { 'a': 'done smth strange', 'c': 'created', 'd': 'deleted', 'm': 'modified', 'n': 'left a note' }
-    return explains[self.action]
-
-  def changed_coord(self):
-    if self.action == 'a':
-      return None
-    c = json.loads(self.changes)[0]
-    if self.action == 'm' and c is not None:
-      return c[1]
-    return c
-
-  def changed_tags(self):
-    if self.action == 'a':
-      return {}
-    tags = json.loads(self.changes)[1]
-    for t in tags:
-      if self.action == 'c':
-        tags[t] = [None, tags[t]]
-      elif self.action == 'd':
-        tags[t] = [tags[t], None]
-      if tags[t][0] is None:
-        tags[t].append('create')
-      elif tags[t][1] is None:
-        tags[t].append('delete')
-      elif tags[t][0] != tags[t][1]:
-        tags[t].append('modify')
-      else:
-        tags[t].append('nothing')
-    return tags
-
-  class Meta:
-    database = database
-
-class User(peewee.Model):
-  """A model for user stats."""
-  user = peewee.CharField(max_length=250, unique=True)
-  edits = peewee.IntegerField()
-  rank = peewee.IntegerField(default=0)
-  joined = peewee.DateField()
-
-  class Meta:
-    database = database
 
 @app.before_request
 def before_request():
@@ -217,6 +157,3 @@ def the_one_and_only_page():
   stats['users'] = q['users'].count(clear_limit=True)
 
   return render_template('index.html', stats=stats, changes=q['changes'], users=q['users'], tags=q['tags'], versions=q['versions'], dates=q['dates'], params=params, purl=purl)
-
-if __name__ == '__main__':
-  app.run(threaded=True)

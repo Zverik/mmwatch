@@ -1,9 +1,8 @@
-import os.path, sys
+import config, json
 from peewee import *
+from playhouse.db_url import connect
 
-#path = os.path.dirname(sys.argv[0]) if len(sys.argv) < 2 else sys.argv[1]
-path = os.path.dirname(sys.argv[0])
-database = SqliteDatabase(os.path.join(path, 'mapsme-changes.db'))
+database = connect(config.DATABASE_URI)
 
 class Change(Model):
   """A model for the change. Just a single table."""
@@ -18,6 +17,37 @@ class Change(Model):
   address = BooleanField(default=False)
   processed = IntegerField(null=True) # number of hours between modifying and an external fix of the object
   changes = TextField()
+
+  def explain_action(self):
+    explains = { 'a': 'done smth strange', 'c': 'created', 'd': 'deleted', 'm': 'modified', 'n': 'left a note' }
+    return explains[self.action]
+
+  def changed_coord(self):
+    if self.action == 'a':
+      return None
+    c = json.loads(self.changes)[0]
+    if self.action == 'm' and c is not None:
+      return c[1]
+    return c
+
+  def changed_tags(self):
+    if self.action == 'a':
+      return {}
+    tags = json.loads(self.changes)[1]
+    for t in tags:
+      if self.action == 'c':
+        tags[t] = [None, tags[t]]
+      elif self.action == 'd':
+        tags[t] = [tags[t], None]
+      if tags[t][0] is None:
+        tags[t].append('create')
+      elif tags[t][1] is None:
+        tags[t].append('delete')
+      elif tags[t][0] != tags[t][1]:
+        tags[t].append('modify')
+      else:
+        tags[t].append('nothing')
+    return tags
 
   class Meta:
     database = database
