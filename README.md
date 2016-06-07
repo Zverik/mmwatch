@@ -7,7 +7,7 @@ It is installed at [osmz.ru](http://py.osmz.ru/mmwatch/).
 
 First, add `server/mapsme-process.py` to crontab. Like this:
 
-    */3 * * * * /var/www/sites/mmwatch/server/mapsme-process.py >> /var/www/sites/mmwatch/server/mapsme-process.log
+    */3 * * * * /var/www/sites/mmwatch/mmwatch/process.py >> /var/www/sites/mmwatch/mmwatch/mapsme-process.log
 
 It will create a database of changes and start updating it once every three minutes.
 If you need to pre-populate the database with earlier edits, comment out the cron line,
@@ -15,27 +15,16 @@ delete `mapsme-changes.db`, edit the sequence number in `mapsme-state.txt` to an
 and run `mapsme-process.py` from a command line. It works rather slow, so be prepared to wait and,
 if unlucky, respond to OSM admins' mail about making requests to the API too often.
 
-To set up the web interface, edit `www/config.py`, specifying the absolute path to the
-database that the above mentioned script creates. And maybe turn off `DEBUG`.
-
-Then edit `www/mmwatch.wsgi`, adding the path to the `mmwatch.py` file:
-
-```python
-import sys
-sys.path.insert(0, '/var/www/sites/mmwatch/www')
-from mmwatch import app as application
-```
+When pushing to the production, turn off `DEBUG` in `mmwatch/config.py`.
 
 Now you need to add the WSGI application to your web server. Refer to [this manual](http://flask.pocoo.org/docs/0.10/deploying/)
 or maybe [this one about Gunicorn](https://www.digitalocean.com/community/tutorials/how-to-deploy-python-wsgi-apps-using-gunicorn-http-server-behind-nginx).
 
 ## Switching to Another Database
 
-By default, mmwatch uses an SQLite database for keeping track of edits.
-You can replace it with MySQL or PostgreSQL, if you like. To do that,
-open `server/db.py` and `www/mmwatch.py` and replace lines with `SqliteDatabase` with
-`MySQLDatabase()` or `PostgresqlDatabase()`. See [this section](http://docs.peewee-orm.com/en/latest/peewee/database.html#vendor-specific-parameters)
-for their arguments.
+Edit `mmwatch/config.py`, replacing the `DATABASE_URI`.
+Refer to [this section](http://docs.peewee-orm.com/en/latest/peewee/database.html#connecting-using-a-database-url)
+of the Peewee documentation.
 
 ## API
 
