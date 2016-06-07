@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import sys, os, urllib2, re, gzip, json
+import urllib2, re, gzip, json
 from db import *
 from lxml import etree
 from StringIO import StringIO
 from datetime import datetime, date
 
-STATE_FILENAME = os.path.join(path, 'mapsme-state.txt')
 REPLICATION_BASE_URL = 'http://planet.openstreetmap.org/replication/changesets'
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6'
 MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emergency', 'barrier',
@@ -19,22 +18,6 @@ def download_last_state():
     m = re.search(r'sequence:\s+(\d+)', state)
     # Not checking to throw exception in case of an error
     return int(m.group(1))
-
-
-def read_last_state():
-    state = None
-    try:
-        with open(STATE_FILENAME, 'r') as f:
-            m = re.search(r'\d+', f.read())
-            state = int(m.group(0))
-    except:
-        pass
-    return state
-
-
-def write_last_state(state):
-    with open(STATE_FILENAME, 'w') as f:
-        f.write(str(state))
 
 
 def filter_changeset(changeset):
@@ -254,21 +237,25 @@ def update_user_ranks():
             count += 1
 
 
-if __name__ == '__main__':
+def process():
+    print 'downloading'
     try:
         cur_state = download_last_state()
     except Exception as e:
         print 'Failed to download last state:', e
-        sys.exit(1)
+        return
 
-    state = read_last_state()
-    if state is None:
-        state = cur_state - 1
-
+    print 'connecting'
     database.connect()
-    database.create_tables([Change, Seen, User], safe=True)
+    database.create_tables([Change, Seen, User, State], safe=True)
 
-    for i in range(state + 1, cur_state + 1):
+    try:
+        state = State.get(id=1)
+    except State.DoesNotExist:
+        state = State()
+        state.state = cur_state - 1
+
+    for i in range(state.state + 1, cur_state + 1):
         print i
         try:
             changesets = download_replication(i)
@@ -278,5 +265,10 @@ if __name__ == '__main__':
         except Exception as e:
             print 'Failed to download and process replication {0}: {1}'.format(i, e)
             raise e
-        write_last_state(i)
+        state.state = i
+        state.save()
     update_user_ranks()
+
+
+if __name__ == '__main__':
+    process()

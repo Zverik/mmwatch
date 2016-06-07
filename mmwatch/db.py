@@ -6,7 +6,12 @@ from playhouse.db_url import connect
 database = connect(config.DATABASE_URI)
 
 
-class Change(Model):
+class BaseModel(Model):
+    class Meta:
+        database = database
+
+
+class Change(BaseModel):
     """A model for the change. Just a single table."""
     changeset = IntegerField()
     user = CharField(max_length=250, index=True)
@@ -51,24 +56,20 @@ class Change(Model):
                 tags[t].append('nothing')
         return tags
 
-    class Meta:
-        database = database
 
-
-class Seen(Model):
+class Seen(BaseModel):
     """A model for a storage of processed objects."""
     obj = TextField(index=True)
 
-    class Meta:
-        database = database
 
-
-class User(Model):
+class User(BaseModel):
     """A model for user stats."""
     user = CharField(max_length=250, unique=True)
     edits = IntegerField()
     rank = IntegerField(default=0)
     joined = DateField()
 
-    class Meta:
-        database = database
+
+class State(BaseModel):
+    """A model for storing replication state."""
+    state = IntegerField()

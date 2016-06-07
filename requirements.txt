@@ -2,3 +2,4 @@ peewee>=2.8.0
 lxml
 flask>=0.11
 flask-Compress
+bz2file
