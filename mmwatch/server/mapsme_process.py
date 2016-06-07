@@ -238,14 +238,12 @@ def update_user_ranks():
 
 
 def process():
-    print 'downloading'
     try:
         cur_state = download_last_state()
     except Exception as e:
         print 'Failed to download last state:', e
         return
 
-    print 'connecting'
     database.connect()
     database.create_tables([Change, Seen, User, State], safe=True)
 
