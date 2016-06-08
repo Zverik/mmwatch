@@ -1,6 +1,5 @@
 import os, json, peewee
 from flask import Flask, send_file, request, render_template, url_for, abort, jsonify, Response
-from flask_compress import Compress
 from datetime import datetime, timedelta
 from StringIO import StringIO
 import config
@@ -8,7 +7,12 @@ from db import database, Change, User
 
 app = Flask(__name__)
 app.debug = config.DEBUG
-Compress(app)
+
+try:
+    from flask_compress import Compress
+    Compress(app)
+except ImportError:
+    pass
 
 
 @app.before_request
