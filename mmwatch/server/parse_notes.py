@@ -3,9 +3,28 @@ import urllib2
 import json
 from tempfile import TemporaryFile
 from bz2file import BZ2File
-from db import database, Change
+from db import database, Change, State
 from lxml import etree
 from datetime import datetime
+
+NOTES_URI = 'http://planet.openstreetmap.org/notes/planet-notes-latest.osn.bz2'
+
+
+def check_update():
+    request = urllib2.Request(NOTES_URI)
+    request.get_method = lambda: 'HEAD'
+    try:
+        response = urllib2.urlopen(request)
+        length = int(response.info()['Content-Length'])
+        if length > 0:
+            st = State.get(State.id == 1)
+            if length != st.notes:
+                st.notes = length
+                st.save()
+                return True
+    except:
+        pass
+    return False
 
 
 def hour_difference(start, timestamp):
@@ -15,7 +34,11 @@ def hour_difference(start, timestamp):
 
 
 def process_notes():
-    response = urllib2.urlopen('http://planet.openstreetmap.org/notes/planet-notes-latest.osn.bz2')
+    database.connect()
+    if not check_update():
+        return
+
+    response = urllib2.urlopen(NOTES_URI)
     # Parsing bz2 through a temporary file
     tmpfile = TemporaryFile()
     while True:
@@ -25,7 +48,6 @@ def process_notes():
         tmpfile.write(chunk)
     tmpfile.seek(0)
 
-    database.connect()
     with database.atomic():
         with BZ2File(tmpfile) as f:
             for event, element in etree.iterparse(f):
@@ -52,7 +74,6 @@ def process_notes():
                             ch.changes = json.dumps(changes, ensure_ascii=False)
                             ch.save()
                     element.clear()
-
 
 if __name__ == '__main__':
     process_notes()

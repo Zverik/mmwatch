@@ -9,3 +9,14 @@ if os.path.exists(VENV_DIR):
 
 from server import mapsme_process
 mapsme_process.process()
+
+from db import State
+from server import parse_notes
+# By this time connection is already established by mapsme_process.
+st = State.get(State.id == 1)
+if st.run_hourly():
+    parse_notes.process_notes()
+    # State could have been modified.
+    st = State.get(State.id == 1)
+    st.update_hourly()
+    st.save()
