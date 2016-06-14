@@ -43,7 +43,7 @@ class Change(BaseModel):
             return {}
         tags = json.loads(self.changes)[1]
         for t in tags:
-            if self.action == 'c':
+            if self.action in ('c', 'n'):
                 tags[t] = [None, tags[t]]
             elif self.action == 'd':
                 tags[t] = [tags[t], None]
