@@ -60,7 +60,7 @@ class Change(BaseModel):
 
 class Seen(BaseModel):
     """A model for a storage of processed objects."""
-    obj = TextField(index=True)
+    obj = CharField(max_length=30, index=True)
 
 
 class User(BaseModel):
