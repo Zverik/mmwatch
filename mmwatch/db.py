@@ -74,8 +74,8 @@ class User(BaseModel):
 class State(BaseModel):
     """A model for storing replication state."""
     state = IntegerField()  # Replication state
-    notes = IntegerField()  # File size of notes dump
-    hourly = IntegerField()  # Unix Timestamp of last object check
+    notes = IntegerField(default=0)  # File size of notes dump
+    hourly = IntegerField(default=0)  # Unix Timestamp of last object check
 
     def run_hourly(self):
         """Returns True if it's time to run hourly tasks."""
