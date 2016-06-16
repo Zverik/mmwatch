@@ -81,14 +81,7 @@ def the_one_and_only_page():
     changeset = request.args.get('changeset', None)
     if changeset is not None and changeset.isdigit():
         params['changeset'] = changeset
-    mapsme5 = request.args.get('mapsme5', None) == '1'
-    if mapsme5:
-        params['mapsme5'] = 1
-        mmlist = []
-        with open(os.path.join(config.DATABASE_PATH, 'mapsme5.lst'), 'r') as f:
-                for line in f:
-                        if line.strip():
-                                mmlist.append(line.strip())
+    namech = request.args.get('namech', None) is not None
 
     # Construct queries
     q = {}
@@ -126,8 +119,8 @@ def the_one_and_only_page():
             pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
             pdate1 = pdate + timedelta(days=1)
             q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
-        if mapsme5:
-            q[k] = q[k].where(Change.user << mmlist)
+        if namech:
+            q[k] = q[k].where((Change.action == 'm') & (Change.changes.contains('"name"')))
 
     # Export geojson if export option is set
     if request.args.get('export', None) == '1':
