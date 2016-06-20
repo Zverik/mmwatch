@@ -20,10 +20,11 @@ class Change(BaseModel):
     timestamp = DateTimeField(index=True)
     action = FixedCharField(max_length=1, index=True)  # c=created, d=deleted, m=modified, a=anomaly, n=note
     obj_type = FixedCharField(max_length=1, null=True)
-    obj_id = IntegerField(null=True)
+    obj_id = BigIntegerField(null=True)
     main_tag = CharField(max_length=100, null=True)
     address = BooleanField(default=False)
     processed = IntegerField(null=True)  # number of hours between modifying and an external fix of the object
+    country = CharField(max_length=150, null=True, index=True)
     changes = TextField()
 
     def explain_action(self):
