@@ -7,8 +7,9 @@ VENV_DIR = os.path.join(BASE_DIR, 'venv', 'lib', PYTHON, 'site-packages')
 if os.path.exists(VENV_DIR):
     sys.path.insert(1, VENV_DIR)
 
-from server import mapsme_process
+from server import mapsme_process, geocode
 mapsme_process.process()
+geocode.add_countries()
 
 from db import State
 from server import parse_notes
