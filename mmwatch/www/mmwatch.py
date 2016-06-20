@@ -82,6 +82,9 @@ def the_one_and_only_page():
     if changeset is not None and changeset.isdigit():
         params['changeset'] = changeset
     namech = request.args.get('namech', None) is not None
+    country = request.args.get('country', None)
+    if country is not None:
+        params['country'] = country
 
     # Construct queries
     q = {}
@@ -94,6 +97,8 @@ def the_one_and_only_page():
         Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
     q['dates'] = Change.select(Change.timestamp, peewee.fn.Count(Change.id).alias('count'), peewee.fn.Count(
         peewee.fn.Distinct(Change.user)).alias('users')).group_by(database.truncate_date('day', Change.timestamp)).order_by(-Change.id)
+    q['countries'] = Change.select(Change.country, peewee.fn.Count(Change.id).alias('count')).group_by(
+        Change.country).order_by(peewee.fn.Count(Change.id).desc())
 
     # Apply filters
     for k in q:
@@ -110,7 +115,7 @@ def the_one_and_only_page():
                 q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
             else:
                 q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') & ~Change.version.startswith('MAPS.ME android'))
-        if k in ('users', 'tags', 'versions', 'dates'):
+        if k in ('users', 'tags', 'versions', 'dates', 'countries'):
             if not nolimit:
                 q[k] = q[k].limit(config.TOP)
             else:
@@ -121,6 +126,8 @@ def the_one_and_only_page():
             q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
         if namech:
             q[k] = q[k].where((Change.action == 'm') & (Change.changes.contains('"name"')))
+        if country:
+            q[k] = q[k].where(Change.country == country)
 
     # Export geojson if export option is set
     if request.args.get('export', None) == '1':
@@ -162,6 +169,6 @@ def the_one_and_only_page():
     stats['users'] = q['users'].count(clear_limit=True)
 
     return render_template('index.html', stats=stats,
-                           changes=q['changes'], users=q['users'],
-                           tags=q['tags'], versions=q['versions'], dates=q['dates'],
+                           changes=q['changes'], users=q['users'], tags=q['tags'],
+                           versions=q['versions'], dates=q['dates'], countries=q['countries'],
                            params=params, purl=purl)

@@ -47,6 +47,18 @@
   {% endif %}
 </div>
 <div class="filter">
+  <h2>Edited Countries</h2>
+  <ol>
+    {% for country in countries %}
+    {% if params.country %}
+    <li>{{ country.country }} ({{country.count}}) <a href="{{ purl(params, country=None) }}">X</a></li>
+    {% else %}
+    <li><a href="{{ purl(params, country=country.country) }}">{{ country.country }}</a> ({{country.count}})</li>
+    {% endif %}
+    {% endfor %}
+  </ol>
+</div>
+<div class="filter">
   <h2>Top Main Tags</h2>
   <ol>
     {% for tag in tags %}
