@@ -4,7 +4,7 @@ import json
 from db import database, Change
 
 QUERYAT_URL = 'http://tile.osmz.ru/queryat/'
-BATCH_COUNT = 1000
+BATCH_COUNT = 20
 
 
 def geocode(lon, lat):
