@@ -1,22 +1,21 @@
 #!/usr/bin/env python
 import urllib2
 import json
+import config
 from db import database, Change
-
-QUERYAT_URL = 'http://tile.osmz.ru/queryat/'
-BATCH_COUNT = 20
 
 
 def geocode(lon, lat):
     """Returns a country by these coordinates."""
     try:
-        url = '{0}qr?lon={1}&lat={2}'.format(QUERYAT_URL, lon, lat)
+        url = '{0}qr?lon={1}&lat={2}'.format(config.QUERYAT_URL, lon, lat)
         resp = urllib2.urlopen(url)
         data = json.load(resp)
         if 'countries' in data and len(data['countries']) > 0:
             c = data['countries'][0]
             return c['en' if 'en' in c else 'name'].encode('utf-8')
         print('Could not geocode: {0}'.format(url))
+        return 'Unknown'
     except urllib2.HTTPError:
         print('HTTPError: ' + url)
     except urllib2.URLError:
@@ -27,7 +26,7 @@ def geocode(lon, lat):
 def add_countries():
     database.connect()
     with database.atomic():
-        q = Change.select().where((Change.country >> None) & (Change.action != 'a') & (~Change.changes.startswith('[[null, null]'))).limit(BATCH_COUNT)
+        q = Change.select().where((Change.country >> None) & (Change.action != 'a') & (~Change.changes.startswith('[[null, null]'))).limit(config.GEOCODE_BATCH)
         for ch in q:
             coord = ch.changed_coord()
             if coord is not None:
