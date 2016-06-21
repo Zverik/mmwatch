@@ -24,6 +24,8 @@ def geocode(lon, lat):
 
 
 def add_countries():
+    if config.QUERYAT_URL is None or config.GEOCODE_BATCH <= 0:
+        return
     database.connect()
     with database.atomic():
         q = Change.select().where((Change.country >> None) & (Change.action != 'a') & (~Change.changes.startswith('[[null, null]'))).limit(config.GEOCODE_BATCH)
