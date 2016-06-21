@@ -95,8 +95,9 @@ def the_one_and_only_page():
         Change.version).order_by(peewee.fn.Count(Change.id).desc())
     q['stat_src'] = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(
         Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
-    q['dates'] = Change.select(Change.timestamp, peewee.fn.Count(Change.id).alias('count'), peewee.fn.Count(
-        peewee.fn.Distinct(Change.user)).alias('users')).group_by(database.truncate_date('day', Change.timestamp)).order_by(-Change.id)
+    q['dates'] = Change.select(database.truncate_date('day', Change.timestamp).alias('day'), peewee.fn.Min(
+        Change.timestamp).alias('timestamp'), peewee.fn.Count(Change.id).alias('count'), peewee.fn.Count(
+        peewee.fn.Distinct(Change.user)).alias('users')).group_by(peewee.SQL('day')).order_by(-peewee.SQL('day'))
     q['countries'] = Change.select(Change.country, peewee.fn.Count(Change.id).alias('count')).group_by(
         Change.country).order_by(peewee.fn.Count(Change.id).desc())
 
