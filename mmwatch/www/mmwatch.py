@@ -40,7 +40,7 @@ def get_user_rating():
         def quoteattr(s):
             return '"{0}"'.format(str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;'))
         xml = '<?xml version="1.0" encoding="UTF-8"?>\n<mmwatch>\n'
-        for field in (('name', user.user), ('rank', user.rank), ('edits', user.edits), ('joined', user.joined.isoformat())):
+        for field in (('name', user.user.encode('utf-8')), ('rank', user.rank), ('edits', user.edits), ('joined', user.joined.isoformat())):
             xml = xml + '  <{0} value={1} />\n'.format(field[0], quoteattr(field[1]))
         xml = xml + '</mmwatch>'
         return Response(xml, mimetype='application/xml')
