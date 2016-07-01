@@ -1,18 +1,10 @@
+from www import app
 import os, json, peewee
-from flask import Flask, send_file, request, render_template, url_for, abort, jsonify, Response
+from flask import send_file, request, render_template, url_for, abort, jsonify, Response
 from datetime import datetime, timedelta
 from StringIO import StringIO
 import config
 from db import database, Change, User
-
-app = Flask(__name__)
-app.debug = config.DEBUG
-
-try:
-    from flask_compress import Compress
-    Compress(app)
-except ImportError:
-    pass
 
 
 @app.before_request
@@ -49,9 +41,12 @@ def get_user_rating():
 
 def purl(params, **kwargs):
     p2 = params.copy()
+    found_page = False
     for k, v in kwargs.iteritems():
         p2[k] = v
-    if 'page' in p2 and p2['page'] <= 1:
+        if k == 'page':
+            found_page = True
+    if 'page' in p2 and (not found_page or p2['page'] <= 1):
         del p2['page']
     return url_for('the_one_and_only_page', **p2)
 

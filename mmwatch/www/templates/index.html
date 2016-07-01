@@ -2,7 +2,7 @@
 <title>MAPS.ME OSM Changes Browser</title>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 <body>
-<h1>OSM Edits Made With MAPS.ME</h1>
+<h1><a href="{{ url_for('the_one_and_only_page') }}">OSM Edits Made With MAPS.ME</a></h1>
 <div id="filterbar">
 <div id="stats" class="filter">
   <h2>Statistics</h2>
@@ -106,6 +106,7 @@
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
+    <input type="checkbox" class="obj_check" value="{{ change.obj_type }}{{ change.obj_id }}">
     <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a><sup><a href="{{ purl(params, user=change.user) }}">&#9875;</a></sup> at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }} in
     {% if change.action == 'n' %}
     <a href="https://www.openstreetmap.org/note/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }}
@@ -127,11 +128,19 @@
   </div>
   {% endfor %}
   <div class="navigation">
+    {% if params.page > 1 %}<a href="{{ purl(params, page=1) }}">&laquo; First</a>{% else %}&laquo; First{% endif %}
     {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
     {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
   </div>
   <div class="download">
     <a href="{{ purl(params, export=1) }}">Download GeoJSON</a>
   </div>
+  <div id="selected">
+    With selected changes:
+    <button onclick="btnClear()">Clear</button>
+    <button onclick="btnLevel0()">Open in Level0</button>
+    <button onclick="btnRevert('{{ url_for('revert') }}')">Revert</button>
+  </div>
 </div>
 <iframe height="0" width="0" name="josmframe" style="visibility:hidden; display:none;" src="about:blank"></iframe>
+<script type="text/javascript" src="{{ url_for('static', filename='bulk.js') }}"></script>
