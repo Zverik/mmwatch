@@ -33,8 +33,6 @@ def oauth(resp):
             resp['oauth_token'],
             resp['oauth_token_secret']
     )
-    user_details = openstreetmap.get('user/details').data
-    session['osm_username'] = user_details[0].get('display_name')
     return redirect(url_for('revert'))
 
 
@@ -49,6 +47,4 @@ def get_token(token='user'):
 def logout():
     if 'osm_token' in session:
         del session['osm_token']
-    if 'osm_username' in session:
-        del session['osm_username']
     return redirect(url_for('the_one_and_only_page'))

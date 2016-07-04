@@ -17,7 +17,7 @@ GEOCODE_BATCH = 20
 # Override these (and anything else) in config_local.py
 OAUTH_KEY = ''
 OAUTH_SECRET = ''
-SESSION_KEY = 'sdkjfhsfljhsadf'
+SECRET_KEY = 'sdkjfhsfljhsadf'
 
 try:
     from config_local import *

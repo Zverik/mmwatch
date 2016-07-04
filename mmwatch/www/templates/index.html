@@ -106,7 +106,7 @@
   <h2>Changes</h2>
   {% for change in changes %}
   <div class="change">
-    <input type="checkbox" class="obj_check" value="{{ change.obj_type }}{{ change.obj_id }}">
+    <input type="checkbox" class="obj_check" value="{{ change.obj_type }}{{ change.obj_id }},{{ change.id }}">
     <a href="https://www.openstreetmap.org/user/{{ change.user }}">{{ change.user }}</a><sup><a href="{{ purl(params, user=change.user) }}">&#9875;</a></sup> at {{ change.timestamp.strftime('%d.%m.%Y %H:%M') }} in
     {% if change.action == 'n' %}
     <a href="https://www.openstreetmap.org/note/{{ change.changeset }}">{{ change.changeset }}</a>: {{ change.explain_action() }}
