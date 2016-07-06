@@ -16,6 +16,7 @@ function btnClear() {
 
 function btnLevel0() {
   var checks = getCheckedObjects(0);
+  if (!checks.length) return;
   var param = checks.join(',');
   var w = window.open('http://level0.osmz.ru/?url=' + param, '_blank');
   w.focus();
@@ -23,6 +24,8 @@ function btnLevel0() {
 
 function btnRevert(url) {
   var checks = getCheckedObjects(1);
+  if (!checks.length) return;
   var param = checks.join(',');
-  window.location.assign(url + '?objects=' + param);
+  var w = window.open(url + '?objects=' + param, '_blank');
+  w.focus();
 }
