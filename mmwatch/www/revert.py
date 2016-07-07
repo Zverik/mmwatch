@@ -21,6 +21,7 @@ openstreetmap = oauth.remote_app('OpenStreetMap',
 @app.route('/revert')
 def revert():
     if 'osm_token' not in session:
+        session['objects'] = request.args.get('objects')
         return openstreetmap.authorize(callback=url_for('oauth'))
 
     objects = request.args.get('objects').split(',')
@@ -39,15 +40,16 @@ You are to revert {count} edit{s} by {names}.<br>
 
 
 @app.route('/oauth')
-@openstreetmap.authorized_handler
-def oauth(resp):
+def oauth():
+    resp = openstreetmap.authorized_response()
     if resp is None:
         return 'Denied. <a href="' + url_for('revert') + '">Try again</a>.'
     session['osm_token'] = (
             resp['oauth_token'],
             resp['oauth_token_secret']
     )
-    return redirect(url_for('revert'))
+    session.permanent = True
+    return redirect(url_for('revert', objects=session.pop('objects')))
 
 
 @openstreetmap.tokengetter
@@ -84,6 +86,13 @@ def actual_revert():
                 ch_list['{0}{1}'.format(ch.obj_type, ch.obj_id)] = json.loads(ch.changes)
         elif ch.action == 'n':
             notes.append(ch.changeset)
+
+    # First, close notes
+    for note in notes:
+        # We don't care for any errors, notes are not important
+        openstreetmap.post('notes/{0}/close?text=Closed+with+MMWatch+Reverter'.format(note))
+    if reduce(lambda s, l: s+len(l), nwr_list.values(), 0) == 0:
+        return 'All notes have been closed.'
 
     # Make three requests for all objects from lists
     # For each object, revert unchanged tags and coords, prepare osc
