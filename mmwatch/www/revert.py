@@ -3,6 +3,7 @@ from flask import session, url_for, redirect, request
 from flask_oauthlib.client import OAuth, get_etree
 from db import Change
 from peewee import fn
+from copy import deepcopy
 import json
 
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6/'
@@ -119,10 +120,11 @@ def actual_revert():
                 })
             elif v > 1 and ref in ch_list:
                 # Reverting tag and coord changes
-                m = etree.SubElement(osc, 'modify')
+                m = etree.Element('modify')
                 rev = revert_change(obj, ch_list[ref])
                 if rev is not None:
                     m.append(rev)
+                    osc.append(m)
 
     if len(osc) == 0:
         return 'These changes have already been reverted.'
@@ -137,7 +139,7 @@ def actual_revert():
     etree.SubElement(ch, 'tag', {'k': 'created_by', 'v': 'MMWatch Reverter'})
     etree.SubElement(ch, 'tag', {'k': 'comment', 'v': comment.decode('utf-8')})
     changeset_xml = etree.tostring(create_xml)
-    resp = openstreetmap.put('changeset/create', changeset_xml, format=None)
+    resp = openstreetmap.put('changeset/create', changeset_xml, format=None, content_type='application/xml')
     if resp.status != 200:
         return 'Failed to open a changeset: {0} {1}'.format(resp.status, resp.data)
     changeset_id = int(resp.raw_data)
@@ -146,7 +148,8 @@ def actual_revert():
     fill_changeset(osc, changeset_id)
     print etree.tostring(osc)
     try:
-        resp = openstreetmap.post('/changeset/{0}/upload'.format(changeset_id), data=etree.tostring(osc), format=None)
+        resp = openstreetmap.post('changeset/{0}/upload'.format(changeset_id),
+                                  data=etree.tostring(osc), format=None, content_type='application/xml')
         if resp.status != 200:
             return 'Failed to upload changes: {0} {1}'.format(resp.status, resp.data)
     finally:
@@ -164,12 +167,44 @@ def revert_change(obj, change):
     for k in ('id', 'version', 'lat', 'lon'):
         if k in obj.keys():
             elem.set(k, obj.get(k))
-    # TODO
-    print 'Reverting', obj.tag, obj.get('id')
+    if obj.tag == 'way':
+        for nd in obj.findall('nd'):
+            elem.append(deepcopy(nd))
+    elif obj.tag == 'relation':
+        for nd in obj.findall('member'):
+            elem.append(deepcopy(nd))
+
+    modified = False
+    # Disabled since MAPS.ME does not support moving nodes yet
+    if False and elem.tag == 'node' and len(change[0]) == 2 and change[0][1] is not None:
+        elem.set('lon', str(change[0][0][0]))
+        elem.set('lat', str(change[0][0][1]))
+    # Create a dict of tags
+    tags = {tag.get('k'): tag.get('v') for tag in obj.findall('tag')}
+    # Revert tag changes
+    for key, values in change[1].items():
+        if values[0] == values[1]:
+            continue
+        if key in tags:
+            if values[1] is not None and values[1] == tags[key]:
+                if values[0] is None:
+                    del tags[key]
+                else:
+                    tags[key] = values[0]
+                modified = True
+        elif values[0] is not None and values[1] is None:
+            tags[key] = values[0]
+            modified = True
+    # Skip element if not modified
+    if not modified:
+        return None
+    # Add remaining tags
+    for k, v in tags.items():
+        etree.SubElement(elem, 'tag', {'k': k, 'v': v})
     return elem
 
 
 def fill_changeset(osc, changeset_id):
     for act in osc:
         for elem in act:
-            elem.set('changeset', changeset_id)
+            elem.set('changeset', str(changeset_id))
