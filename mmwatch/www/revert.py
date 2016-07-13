@@ -14,8 +14,8 @@ openstreetmap = oauth.remote_app('OpenStreetMap',
                                  request_token_url='https://www.openstreetmap.org/oauth/request_token',
                                  access_token_url='https://www.openstreetmap.org/oauth/access_token',
                                  authorize_url='https://www.openstreetmap.org/oauth/authorize',
-                                 consumer_key=app.config['OAUTH_KEY'],
-                                 consumer_secret=app.config['OAUTH_SECRET']
+                                 consumer_key=app.config['OAUTH_KEY'] or '123',
+                                 consumer_secret=app.config['OAUTH_SECRET'] or '123'
                                  )
 
 

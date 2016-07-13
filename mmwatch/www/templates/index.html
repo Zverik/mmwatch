@@ -139,7 +139,9 @@
     With selected changes:
     <button onclick="btnClear()">Clear</button>
     <button onclick="btnLevel0()">Open in Level0</button>
+    {% if has_revert %}
     <button onclick="btnRevert('{{ url_for('revert') }}')">Revert</button>
+    {% endif %}
   </div>
 </div>
 <iframe height="0" width="0" name="josmframe" style="visibility:hidden; display:none;" src="about:blank"></iframe>

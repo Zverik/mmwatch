@@ -167,4 +167,5 @@ def the_one_and_only_page():
     return render_template('index.html', stats=stats,
                            changes=q['changes'], users=q['users'], tags=q['tags'],
                            versions=q['versions'], dates=q['dates'], countries=q['countries'],
+                           has_revert=config.OAUTH_KEY != '',
                            params=params, purl=purl)
