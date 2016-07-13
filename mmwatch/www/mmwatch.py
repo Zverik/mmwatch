@@ -40,13 +40,13 @@ def get_user_rating():
 
 
 def purl(params, **kwargs):
+    if 'clear' in kwargs:
+        del kwargs['clear']
+        return url_for('the_one_and_only_page', **kwargs)
     p2 = params.copy()
-    found_page = False
     for k, v in kwargs.iteritems():
         p2[k] = v
-        if k == 'page':
-            found_page = True
-    if 'page' in p2 and (not found_page or p2['page'] <= 1):
+    if 'page' in p2 and ('page' not in kwargs or p2['page'] <= 1):
         del p2['page']
     return url_for('the_one_and_only_page', **p2)
 
