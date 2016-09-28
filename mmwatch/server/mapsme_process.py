@@ -208,8 +208,13 @@ def record_changeset_diff(changeset):
                 if obj['version'] == 1:
                     prev = None
                 else:
-                    response2 = urllib2.urlopen('{0}/{1}/{2}/{3}'.format(API_ENDPOINT, obj['type'], obj['id'], obj['version'] - 1))
-                    prev = obj_to_dict(etree.parse(response2).getroot()[0])
+                    url = '{0}/{1}/{2}/{3}'.format(API_ENDPOINT, obj['type'], obj['id'], obj['version'] - 1)
+                    try:
+                        response2 = urllib2.urlopen(url)
+                        prev = obj_to_dict(etree.parse(response2).getroot()[0])
+                    except urllib2.HTTPError:
+                        print 'Failed do download previous version: {0}'.format(url)
+                        prev = None
                 record_obj_diff(changeset, obj, prev, anomalies)
     if sum(anomalies.itervalues()) > 0:
         ch = Change()
