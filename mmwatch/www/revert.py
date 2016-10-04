@@ -1,6 +1,5 @@
 from www import app
 from flask import session, url_for, redirect, request
-from flask_oauthlib.client import OAuth, get_etree
 from db import Change
 from peewee import fn
 from copy import deepcopy
@@ -8,15 +7,22 @@ import json
 
 API_ENDPOINT = 'https://api.openstreetmap.org/api/0.6/'
 
-oauth = OAuth()
-openstreetmap = oauth.remote_app('OpenStreetMap',
-                                 base_url=API_ENDPOINT,
-                                 request_token_url='https://www.openstreetmap.org/oauth/request_token',
-                                 access_token_url='https://www.openstreetmap.org/oauth/access_token',
-                                 authorize_url='https://www.openstreetmap.org/oauth/authorize',
-                                 consumer_key=app.config['OAUTH_KEY'] or '123',
-                                 consumer_secret=app.config['OAUTH_SECRET'] or '123'
-                                 )
+try:
+    from flask_oauthlib.client import OAuth, get_etree
+    oauth = OAuth()
+    openstreetmap = oauth.remote_app('OpenStreetMap',
+                                     base_url=API_ENDPOINT,
+                                     request_token_url='https://www.openstreetmap.org/oauth/request_token',
+                                     access_token_url='https://www.openstreetmap.org/oauth/access_token',
+                                     authorize_url='https://www.openstreetmap.org/oauth/authorize',
+                                     consumer_key=app.config['OAUTH_KEY'] or '123',
+                                     consumer_secret=app.config['OAUTH_SECRET'] or '123'
+                                     )
+except ImportError:
+    class FakeOauthDeco:
+        def tokengetter(self, func):
+            pass
+    openstreetmap = FakeOauthDeco()
 
 
 @app.route('/revert')
