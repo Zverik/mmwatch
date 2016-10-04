@@ -5,6 +5,8 @@ from peewee import *
 from playhouse.db_url import connect
 
 database = connect(config.DATABASE_URI)
+if 'mysql' in config.DATABASE_URI:
+    database.execute_sql("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;")
 
 
 class BaseModel(Model):
@@ -15,7 +17,7 @@ class BaseModel(Model):
 class Change(BaseModel):
     """A model for the change. Just a single table."""
     changeset = IntegerField()
-    user = CharField(max_length=250, index=True)
+    user = CharField(max_length=190, index=True)
     version = CharField(max_length=250)
     timestamp = DateTimeField(index=True)
     action = FixedCharField(max_length=1, index=True)  # c=created, d=deleted, m=modified, a=anomaly, n=note
@@ -66,7 +68,7 @@ class Seen(BaseModel):
 
 class User(BaseModel):
     """A model for user stats."""
-    user = CharField(max_length=250, unique=True)
+    user = CharField(max_length=190, unique=True)
     edits = IntegerField()
     rank = IntegerField(default=0)
     joined = DateField()

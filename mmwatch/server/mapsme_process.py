@@ -12,6 +12,10 @@ MAIN_TAGS = ('amenity', 'shop', 'tourism', 'historic', 'craft', 'office', 'emerg
 INTERESTING_TAGS = list(MAIN_TAGS) + ['name']
 
 
+def log(s):
+    print unicode(s).encode('utf8')
+
+
 def download_last_state():
     """Downloads last changeset replication sequence number from the planet website."""
     state = urllib2.urlopen(REPLICATION_BASE_URL + '/state.yaml').read()
@@ -38,10 +42,11 @@ def download_replication(state):
             if element.tag == 'changeset':
                 chdata = {}
             elif element.tag == 'tag':
-                chdata[element.get('k')] = element.get('v').encode('utf-8')
+                chdata[element.get('k')] = element.get('v')
         elif event == 'end' and element.tag == 'changeset':
             chdata['id'] = int(element.get('id'))
-            chdata['user'] = element.get('user').encode('utf-8')
+            # The maximum length of the field is 190 characters due to a MySQL index limitation
+            chdata['user'] = element.get('user')[:190]
             chdata['timestamp'] = element.get('created_at')
             if filter_changeset(chdata):
                 changesets.append(chdata)
@@ -102,7 +107,7 @@ def create_change(changeset, obj):
     main = None
     for k in MAIN_TAGS:
         if k in obj['tags']:
-            main = '{0}={1}'.format(k, obj['tags'][k].encode('utf-8'))
+            main = u'{0}={1}'.format(k, obj['tags'][k])
             break
     if main is None:
         main = 'unknown'
@@ -213,7 +218,7 @@ def record_changeset_diff(changeset):
                         response2 = urllib2.urlopen(url)
                         prev = obj_to_dict(etree.parse(response2).getroot()[0])
                     except urllib2.HTTPError:
-                        print 'Failed do download previous version: {0}'.format(url)
+                        log(u'Failed do download previous version: {0}'.format(url))
                         prev = None
                 record_obj_diff(changeset, obj, prev, anomalies)
     if sum(anomalies.itervalues()) > 0:
@@ -246,7 +251,7 @@ def process():
     try:
         cur_state = download_last_state()
     except Exception as e:
-        print 'Failed to download last state:', e
+        log(u'Failed to download last state: {0}'.format(e))
         return
 
     database.connect()
@@ -259,14 +264,14 @@ def process():
         state.state = cur_state - 1
 
     for i in range(state.state + 1, cur_state + 1):
-        print i
+        log(i)
         try:
             changesets = download_replication(i)
             for c in changesets:
-                print '-', c
+                log(u'- {0}'.format(c))
                 record_changeset_diff(c)
         except Exception as e:
-            print 'Failed to download and process replication {0}: {1}'.format(i, e)
+            log(u'Failed to download and process replication {0}: {1}'.format(i, e))
             raise e
         state.state = i
         state.save()
