@@ -69,6 +69,9 @@ def the_one_and_only_page():
     date = request.args.get('date', None)
     if date is not None:
         params['date'] = date
+    date_end = request.args.get('date_end', None)
+    if date_end is not None:
+        params['date_end'] = date_end
     nolimit = request.args.get('nolimit', None) is not None
     action = request.args.get('action', None)
     if action is not None:
@@ -117,8 +120,20 @@ def the_one_and_only_page():
             else:
                 q[k] = q[k].limit(1000)
         if date:
-            pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
-            pdate1 = pdate + timedelta(days=1)
+            if date_end:
+                pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
+                pdate1 = datetime.strptime(date_end + ' UTC', '%d.%m.%Y %Z')
+            else:
+                try:
+                    pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
+                    pdate1 = pdate + timedelta(days=1)
+                except ValueError:
+                    pdate = datetime.strptime(date + ' UTC', '%m.%Y %Z')
+                    year, month = divmod(pdate.month + 1, 12)
+                    if month == 0:
+                        month = 12
+                        year -= 1
+                    pdate1 = datetime(pdate.year + year, month, 1)
             q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
         if namech:
             q[k] = q[k].where((Change.action == 'm') & (Change.changes.contains('"name"')))
