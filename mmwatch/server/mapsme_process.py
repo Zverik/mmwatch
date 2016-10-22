@@ -141,10 +141,17 @@ def find_coord(obj_type, obj_id):
     obj = etree.parse(response).getroot()[0]
     if obj.tag == 'node':
         return (obj.get('lon'), obj.get('lat'))
-    else:
+    elif obj.tag == 'way':
         # Get coordinate of the first node
         nd = obj.find('nd')
-        return find_coord('node', nd.get('ref'))
+        if nd is not None:
+            return find_coord('node', nd.get('ref'))
+    else:
+        # This is a relation
+        member = obj.find('member')
+        if member is not None:
+            return find_coord(member.get('type'), member.get('ref'))
+    return None
 
 
 def record_obj_diff(changeset, obj, prev, anomalies):
