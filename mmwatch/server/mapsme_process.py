@@ -26,7 +26,7 @@ def download_last_state():
 
 def filter_changeset(changeset):
     """A changeset object is a dict of tags plus 'id', 'timestamp' and 'user' fields."""
-    return 'created_by' in changeset and 'maps.me' in changeset['created_by'].lower()
+    return 'created_by' in changeset and 'maps.me' in changeset['created_by'].lower() and 'JOSM' not in changeset['created_by']
 
 
 def download_replication(state):
