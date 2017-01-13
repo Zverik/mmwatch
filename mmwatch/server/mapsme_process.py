@@ -277,7 +277,7 @@ def process():
             for c in changesets:
                 log(u'- {0}'.format(c))
                 record_changeset_diff(c)
-        except Exception as e:
+        except ValueError as e:
             log(u'Failed to download and process replication {0}: {1}'.format(i, e))
             raise e
         state.state = i
