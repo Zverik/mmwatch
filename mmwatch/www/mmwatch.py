@@ -5,6 +5,25 @@ from datetime import datetime, timedelta
 from StringIO import StringIO
 import config
 from db import database, Change, User
+from functools import wraps
+from werkzeug.contrib.cache import SimpleCache
+
+cache = SimpleCache()
+
+
+def cached(timeout=5 * 60, key='view'):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            cache_key = '{}/{}'.format(key, request.path)
+            rv = cache.get(cache_key)
+            if rv is not None:
+                return rv
+            rv = f(*args, **kwargs)
+            cache.set(cache_key, rv, timeout=timeout)
+            return rv
+        return decorated_function
+    return decorator
 
 
 @app.before_request
@@ -52,6 +71,7 @@ def purl(params, **kwargs):
 
 
 @app.route('/')
+@cached()
 def the_one_and_only_page():
     # Parse query params
     params = {}
