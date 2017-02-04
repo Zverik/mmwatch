@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import urllib2, re, gzip, json
+import config
 from db import *
 from lxml import etree
 from StringIO import StringIO
@@ -26,7 +27,7 @@ def download_last_state():
 
 def filter_changeset(changeset):
     """A changeset object is a dict of tags plus 'id', 'timestamp' and 'user' fields."""
-    if changeset['uid'] == 481934:  # Ban iWowik
+    if changeset['uid'] in config.BAN_USERS:
         return False
     return 'created_by' in changeset and changeset['created_by'][:7] == 'MAPS.ME' and 'JOSM' not in changeset['created_by']
 

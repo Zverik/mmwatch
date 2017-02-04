@@ -8,6 +8,7 @@ DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'server', 'mapsme-changes.d
 
 PAGE_SIZE = 100
 TOP = 10
+BAN_USERS = set([481934])
 
 # See https://github.com/Zverik/queryat
 # Example: 'http://localhost:5000/queryat/'
