@@ -26,7 +26,9 @@ def download_last_state():
 
 def filter_changeset(changeset):
     """A changeset object is a dict of tags plus 'id', 'timestamp' and 'user' fields."""
-    return 'created_by' in changeset and 'maps.me' in changeset['created_by'].lower() and 'JOSM' not in changeset['created_by']
+    if changeset['uid'] == 481934:  # Ban iWowik
+        return False
+    return 'created_by' in changeset and changeset['created_by'][:7] == 'MAPS.ME' and 'JOSM' not in changeset['created_by']
 
 
 def download_replication(state):
@@ -47,6 +49,7 @@ def download_replication(state):
             chdata['id'] = int(element.get('id'))
             # The maximum length of the field is 190 characters due to a MySQL index limitation
             chdata['user'] = element.get('user')[:190]
+            chdata['uid'] = int(element.get('uid'))
             chdata['timestamp'] = element.get('created_at')
             if filter_changeset(chdata):
                 changesets.append(chdata)
