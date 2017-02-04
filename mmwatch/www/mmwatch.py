@@ -37,6 +37,11 @@ def teardown(exception):
         database.close()
 
 
+@app.route('/robots.txt')
+def no_robots():
+    return 'User-agent: *\nDisallow: /'
+
+
 @app.route('/user')
 def get_user_rating():
     name = request.args.get('name')
