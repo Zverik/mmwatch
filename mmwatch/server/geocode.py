@@ -28,7 +28,9 @@ def add_countries():
         return
     database.connect()
     with database.atomic():
-        q = Change.select().where((Change.country >> None) & (Change.action != 'a') & (~Change.changes.startswith('[[null, null]'))).limit(config.GEOCODE_BATCH)
+        q = Change.select().where((Change.country >> None) & (Change.action != 'a') & (~Change.changes.startswith('[[null, null]'))).limit(
+            config.GEOCODE_BATCH + 200)
+        count = config.GEOCODE_BATCH
         for ch in q:
             coord = ch.changed_coord()
             if coord is not None:
@@ -37,7 +39,13 @@ def add_countries():
                     ch.country = country[:150]
                     ch.save()
             else:
-                print('Empty coordinates: {0} {1} {2}'.format(ch.id, ch.action, ch.changes.encode('utf-8')))
+                # print('Empty coordinates: {0} {1} {2}'.format(ch.id, ch.action, ch.changes.encode('utf-8')))
+                pass
+
+            # We request more because of these empty coordinates errors
+            count -= 1
+            if count <= 0:
+                break
 
 
 if __name__ == '__main__':

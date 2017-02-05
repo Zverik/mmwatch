@@ -75,9 +75,16 @@ def purl(params, **kwargs):
     return url_for('the_one_and_only_page', **p2)
 
 
+def is_disabled():
+    return os.path.exists(os.path.join(config.BASE_DIR, 'pause'))
+
+
 @app.route('/')
 @cached()
 def the_one_and_only_page():
+    if is_disabled():
+        return "The service is disabled for updates.<br>Please come back in a couple minutes."
+
     # Parse query params
     params = {}
     page = request.args.get('page', '1')
