@@ -4,103 +4,7 @@
 <body>
 <h1><a href="{{ url_for('the_one_and_only_page') }}">OSM Edits Made With MAPS.ME</a></h1>
 <div id="filterbar">
-<div id="stats" class="filter">
-  <h2>Statistics</h2>
-  <ul>
-    <li>Total: {{ stats.total }}</li>
-    {% if params.action == 'c' %}
-    <li>Created: {{ stats.created }} <a href="{{ purl(params, action=None) }}">X</a></li>
-    {% elif params.action == 'd' %}
-    <li>Deleted: {{ stats.deleted }} <a href="{{ purl(params, action=None) }}">X</a></li>
-    {% elif params.action == 'm' %}
-    <li>Modified: {{ stats.modified }} <a href="{{ purl(params, action=None) }}">X</a></li>
-    {% elif params.action == 'n' %}
-    <li>Notes: {{ stats.notes }} <a href="{{ purl(params, action=None) }}">X</a></li>
-    {% elif params.action == 'a' %}
-    <li>Anomalies: {{ stats.anomalies }} <a href="{{ purl(params, action=None) }}">X</a></li>
-    {% else %}
-    <li>Created: <a href="{{ purl(params, action='c') }}">{{ stats.created }}</a></li>
-    <li>Deleted: <a href="{{ purl(params, action='d') }}">{{ stats.deleted }}</a></li>
-    <li>Modified: <a href="{{ purl(params, action='m') }}">{{ stats.modified }}</a></li>
-    <li>Notes: <a href="{{ purl(params, action='n') }}">{{ stats.notes }}</a></li>
-    <li>Anomalies: <a href="{{ purl(params, action='a') }}">{{ stats.anomalies }}</a></li>
-    {% endif %}
-    <li>Nodes: {{ stats.nodes }}</li>
-    <li>Ways: {{ stats.ways }}</li>
-    <li>Relations: {{stats.relations }}</li>
-    <li>Users: {{stats.users }}</li>
-  </ul>
-</div>
-<div class="filter">
-  <h2>Top Users</h2>
-  <ol>
-    {% for user in users %}
-    {% if params.user %}
-    <li>{{ user.user }} ({{user.count}}) <a href="{{ purl(params, user=None) }}">X</a></li>
-    {% else %}
-    <li><a href="{{ purl(params, user=user.user) }}">{{ user.user }}</a> ({{user.count}})</li>
-    {% endif %}
-    {% endfor %}
-  </ol>
-  {% if not params.nolimit %}
-  <div><a href="{{ purl(params, nolimit=1) }}">Show all</a></div>
-  {% endif %}
-</div>
-<div class="filter">
-  <h2>Edited Countries</h2>
-  <ol>
-    {% for country in countries %}
-    {% if params.country %}
-    <li>{{ country.country }} ({{country.count}}) <a href="{{ purl(params, country=None) }}">X</a></li>
-    {% else %}
-    <li><a href="{{ purl(params, country=country.country) }}">{{ country.country }}</a> ({{country.count}})</li>
-    {% endif %}
-    {% endfor %}
-  </ol>
-</div>
-<div class="filter">
-  <h2>Top Main Tags</h2>
-  <ol>
-    {% for tag in tags %}
-    <li>{{ tag.main_tag }} ({{tag.count}})</li>
-    {% endfor %}
-  </ol>
-</div>
-<div class="filter">
-  <h2>Versions</h2>
-  <div>
-    Filter:
-    {% if params.platform %}
-    {{ params.platform }} <a href="{{ purl(params, platform=None) }}">X</a>
-    {% else %}
-    {% for p in ('ios', 'android', 'other') %}
-    <a href="{{ purl(params, platform=p) }}">{{ p }}</a>
-    {% endfor %}
-    {% endif %}
-  </div>
-  <ol>
-    {% for v in versions %}
-    {% if params.version %}
-    <li>{{ v.version }} ({{v.count}}) <a href="{{ purl(params, version=None) }}">X</a></li>
-    {% else %}
-    <li><a href="{{ purl(params, version=v.version) }}">{{ v.version }}</a> ({{v.count}})</li>
-    {% endif %}
-    {% endfor %}
-  </ol>
-</div>
-<div class="filter">
-  <h2>Dates</h2>
-  <div>Note: timezone is UTC.</div>
-  <ul>
-    {% if params.date %}
-    <li>{{ params.date }} <a href="{{ purl(params, date=None) }}">X</a></li>
-    {% else %}
-    {% for d in dates %}
-    <li><a href="{{ purl(params, date=d.timestamp.strftime('%d.%m.%Y')) }}">{{ d.timestamp.strftime('%d.%m.%Y') }}</a> ({{ d.count }} by {{ d.users }})</li>
-    {% endfor %}
-    {% endif %}
-  </ul>
-</div>
+    {{ filters | safe }}
 </div>
 <div>
   <h2>Changes</h2>
@@ -130,7 +34,7 @@
   <div class="navigation">
     {% if params.page > 1 %}<a href="{{ purl(params, page=1) }}">&laquo; First</a>{% else %}&laquo; First{% endif %}
     {% if params.page > 1 %}<a href="{{ purl(params, page=params.page-1) }}">&laquo; Newer</a>{% else %}&laquo; Newer{% endif %}
-    {% if params.page < stats.pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
+    {% if params.page < pages  %}<a href="{{ purl(params, page=params.page+1) }}">Older &raquo;</a>{% else %}Older &raquo;{% endif %}
   </div>
   <div class="download">
     <a href="{{ purl(params, export=1) }}">Download GeoJSON</a>

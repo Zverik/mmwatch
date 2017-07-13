@@ -1,5 +1,7 @@
 from www import app
-import os, json, peewee
+import os
+import json
+import peewee
 from flask import send_file, request, render_template, url_for, abort, jsonify, Response
 from datetime import datetime, timedelta
 from StringIO import StringIO
@@ -54,9 +56,18 @@ def get_user_rating():
         abort(404)
     if fmt == 'xml':
         def quoteattr(s):
-            return '"{0}"'.format(str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;'))
+            return '"{0}"'.format(str(s)
+                                  .replace('&', '&amp;')
+                                  .replace('<', '&lt;')
+                                  .replace('>', '&gt;')
+                                  .replace('"', '&quot;'))
         xml = '<?xml version="1.0" encoding="UTF-8"?>\n<mmwatch>\n'
-        for field in (('name', user.user.encode('utf-8')), ('rank', user.rank), ('edits', user.edits), ('joined', user.joined.isoformat())):
+        for field in (
+            ('name', user.user.encode('utf-8')),
+            ('rank', user.rank),
+            ('edits', user.edits),
+            ('joined', user.joined.isoformat())
+        ):
             xml = xml + '  <{0} value={1} />\n'.format(field[0], quoteattr(field[1]))
         xml = xml + '</mmwatch>'
         return Response(xml, mimetype='application/xml')
@@ -77,6 +88,151 @@ def purl(params, **kwargs):
 
 def is_disabled():
     return os.path.exists(os.path.join(config.BASE_DIR, 'pause'))
+
+
+def prepare_query(params):
+    q = {}
+    q['changes'] = (Change
+                    .select()
+                    .order_by(Change.id.desc())
+                    .paginate(params['page'], config.PAGE_SIZE))
+    q['users'] = (Change
+                  .select(Change.user, peewee.fn.Count(Change.id).alias('count'))
+                  .group_by(Change.user)
+                  .order_by(peewee.fn.Count(Change.id).desc()))
+    q['tags'] = (Change
+                 .select(Change.main_tag, peewee.fn.Count(Change.id).alias('count'))
+                 .group_by(Change.main_tag)
+                 .order_by(peewee.fn.Count(Change.id).desc()))
+    q['versions'] = (Change
+                     .select(Change.version, peewee.fn.Count(Change.id).alias('count'))
+                     .group_by(Change.version)
+                     .order_by(peewee.fn.Count(Change.id).desc()))
+    q['stat_src'] = (Change
+                     .select(Change.action, Change.obj_type,
+                             peewee.fn.Count(Change.id).alias('count'))
+                     .group_by(Change.action, Change.obj_type)
+                     .order_by(peewee.fn.Count(Change.id).desc()))
+    q['dates'] = (Change
+                  .select(
+                      database.truncate_date('day', Change.timestamp).alias('day'),
+                      peewee.fn.Min(Change.timestamp).alias('timestamp'),
+                      peewee.fn.Count(Change.id).alias('count'),
+                      peewee.fn.Count(peewee.fn.Distinct(Change.user)).alias('users')
+                  )
+                  .group_by(peewee.SQL('day'))
+                  .order_by(-peewee.SQL('day')))
+    q['countries'] = (Change
+                      .select(Change.country, peewee.fn.Count(Change.id).alias('count'))
+                      .group_by(Change.country)
+                      .order_by(peewee.fn.Count(Change.id).desc()))
+
+    # Apply filters
+    for k in q:
+        if 'user' in params:
+            q[k] = q[k].where(Change.user == params['user'])
+        if 'version' in params:
+            q[k] = q[k].where(Change.version == params['version'])
+        if 'action' in params:
+            q[k] = q[k].where(Change.action == params['action'])
+        if 'changeset' in params:
+            q[k] = q[k].where(Change.changeset == params['changeset'])
+        if 'platform' in params:
+            if params['platform'] != 'other':
+                q[k] = q[k].where(Change.version.startswith(
+                    'MAPS.ME {0}'.format(params['platform'])))
+            else:
+                q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') &
+                                  ~Change.version.startswith('MAPS.ME android'))
+        if 'date' in params:
+            if 'date_end' in params:
+                pdate = datetime.strptime(params['date'] + ' UTC', '%d.%m.%Y %Z')
+                pdate1 = datetime.strptime(params['date_end'] + ' UTC', '%d.%m.%Y %Z')
+            else:
+                try:
+                    pdate = datetime.strptime(params['date'] + ' UTC', '%d.%m.%Y %Z')
+                    pdate1 = pdate + timedelta(days=1)
+                except ValueError:
+                    pdate = datetime.strptime(params['date'] + ' UTC', '%m.%Y %Z')
+                    year, month = divmod(pdate.month + 1, 12)
+                    if month == 0:
+                        month = 12
+                        year -= 1
+                    pdate1 = datetime(pdate.year + year, month, 1)
+            q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
+        if 'namech' in params:
+            q[k] = q[k].where((Change.action == 'm') & (Change.changes.contains('"name"')))
+        if 'country' in params:
+            q[k] = q[k].where(Change.country == params['country'])
+    return q
+
+
+def filter_block(params=None, limit=True):
+    """Prepares a filter block with given params."""
+    if params is None:
+        params = {}
+    q = prepare_query(params)
+
+    for k in ('users', 'tags', 'versions', 'dates', 'countries'):
+        if limit:
+            q[k] = q[k].limit(config.TOP)
+        else:
+            q[k] = q[k].limit(1000)
+
+    # Calculate statistics
+    stats = {}
+    stats['created'] = stats['deleted'] = stats['modified'] = 0
+    stats['notes'] = stats['anomalies'] = 0
+    stats['nodes'] = stats['ways'] = stats['relations'] = stats['total'] = 0
+    for stat in q['stat_src']:
+        stats['total'] += stat.count
+        if stat.action == 'c':
+            stats['created'] += stat.count
+        elif stat.action == 'd':
+            stats['deleted'] += stat.count
+        elif stat.action == 'm':
+            stats['modified'] += stat.count
+        elif stat.action == 'n':
+            stats['notes'] += stat.count
+        elif stat.action == 'a':
+            stats['anomalies'] += stat.count
+        if stat.obj_type == 'n':
+            stats['nodes'] += stat.count
+        elif stat.obj_type == 'w':
+            stats['ways'] += stat.count
+        elif stat.obj_type == 'r':
+            stats['relations'] += stat.count
+    stats['pages'] = (stats['total'] + config.PAGE_SIZE - 1) / config.PAGE_SIZE
+    stats['users'] = q['users'].count(clear_limit=True)
+
+    return render_template('filter.html', stats=stats, users=q['users'], tags=q['tags'],
+                           versions=q['versions'], dates=q['dates'], countries=q['countries'],
+                           params=params, purl=purl)
+
+
+def as_geojson(changes):
+    features = []
+    for ch in changes.limit(3000):
+        coord = ch.changed_coord()
+        if coord is None:
+            continue
+        props = {
+            'obj_type': ch.obj_type,
+            'obj_id': ch.obj_id,
+            'action': ch.action,
+            'main_tag': ch.main_tag,
+            'user': ch.user
+        }
+        f = {'type': 'Feature', 'properties': props, 'geometry': {
+            'type': 'Point',
+            'coordinates': [float(coord[0]), float(coord[1])]
+        }}
+        features.append(f)
+    content = json.dumps({'type': 'FeatureCollection', 'features': features})
+    return send_file(StringIO(str(content)),
+                     mimetype='Content-Type: application/vnd.geo+json',
+                     attachment_filename='mapsme_changes.geojson',
+                     as_attachment=True)
 
 
 @app.route('/')
@@ -111,108 +267,25 @@ def the_one_and_only_page():
     changeset = request.args.get('changeset', None)
     if changeset is not None and changeset.isdigit():
         params['changeset'] = changeset
-    namech = request.args.get('namech', None) is not None
+    namech = request.args.get('namech', None)
+    if namech is not None:
+        params['namech'] = namech
     country = request.args.get('country', None)
     if country is not None:
         params['country'] = country
 
     # Construct queries
-    q = {}
-    q['changes'] = Change.select().order_by(Change.id.desc()).paginate(params['page'], config.PAGE_SIZE)
-    q['users'] = Change.select(Change.user, peewee.fn.Count(Change.id).alias('count')).group_by(Change.user).order_by(peewee.fn.Count(Change.id).desc())
-    q['tags'] = Change.select(Change.main_tag, peewee.fn.Count(Change.id).alias('count')).group_by(Change.main_tag).order_by(peewee.fn.Count(Change.id).desc())
-    q['versions'] = Change.select(Change.version, peewee.fn.Count(Change.id).alias('count')).group_by(
-        Change.version).order_by(peewee.fn.Count(Change.id).desc())
-    q['stat_src'] = Change.select(Change.action, Change.obj_type, peewee.fn.Count(Change.id).alias('count')).group_by(
-        Change.action, Change.obj_type).order_by(peewee.fn.Count(Change.id).desc())
-    q['dates'] = Change.select(database.truncate_date('day', Change.timestamp).alias('day'), peewee.fn.Min(
-        Change.timestamp).alias('timestamp'), peewee.fn.Count(Change.id).alias('count'), peewee.fn.Count(
-        peewee.fn.Distinct(Change.user)).alias('users')).group_by(peewee.SQL('day')).order_by(-peewee.SQL('day'))
-    q['countries'] = Change.select(Change.country, peewee.fn.Count(Change.id).alias('count')).group_by(
-        Change.country).order_by(peewee.fn.Count(Change.id).desc())
-
-    # Apply filters
-    for k in q:
-        if user:
-            q[k] = q[k].where(Change.user == user)
-        if version:
-            q[k] = q[k].where(Change.version == version)
-        if action:
-            q[k] = q[k].where(Change.action == action)
-        if 'changeset' in params:
-            q[k] = q[k].where(Change.changeset == params['changeset'])
-        if platform:
-            if platform != 'other':
-                q[k] = q[k].where(Change.version.startswith('MAPS.ME {0}'.format(platform)))
-            else:
-                q[k] = q[k].where(~Change.version.startswith('MAPS.ME ios') & ~Change.version.startswith('MAPS.ME android'))
-        if k in ('users', 'tags', 'versions', 'dates', 'countries'):
-            if not nolimit:
-                q[k] = q[k].limit(config.TOP)
-            else:
-                q[k] = q[k].limit(1000)
-        if date:
-            if date_end:
-                pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
-                pdate1 = datetime.strptime(date_end + ' UTC', '%d.%m.%Y %Z')
-            else:
-                try:
-                    pdate = datetime.strptime(date + ' UTC', '%d.%m.%Y %Z')
-                    pdate1 = pdate + timedelta(days=1)
-                except ValueError:
-                    pdate = datetime.strptime(date + ' UTC', '%m.%Y %Z')
-                    year, month = divmod(pdate.month + 1, 12)
-                    if month == 0:
-                        month = 12
-                        year -= 1
-                    pdate1 = datetime(pdate.year + year, month, 1)
-            q[k] = q[k].where((Change.timestamp >= pdate) & (Change.timestamp < pdate1))
-        if namech:
-            q[k] = q[k].where((Change.action == 'm') & (Change.changes.contains('"name"')))
-        if country:
-            q[k] = q[k].where(Change.country == country)
+    q = prepare_query(params)
 
     # Export geojson if export option is set
     if request.args.get('export', None) == '1':
-        features = []
-        for ch in q['changes'].limit(3000):
-            coord = ch.changed_coord()
-            if coord is None:
-                continue
-            props = { 'obj_type': ch.obj_type, 'obj_id': ch.obj_id, 'action': ch.action, 'main_tag': ch.main_tag, 'user': ch.user }
-            f = { 'type': 'Feature', 'properties': props, 'geometry': { 'type': 'Point', 'coordinates': [float(coord[0]), float(coord[1])] } }
-            features.append(f)
-        content = json.dumps({ 'type': 'FeatureCollection', 'features': features })
-        return send_file(StringIO(str(content)), mimetype='Content-Type: application/vnd.geo+json',
-                         attachment_filename='mapsme_changes.geojson', as_attachment=True)
+        return as_geojson(q['changes'])
 
-    # Calculate statistics
-    stats = {}
-    stats['created'] = stats['deleted'] = stats['modified'] = stats['notes'] = stats['anomalies'] = 0
-    stats['nodes'] = stats['ways'] = stats['relations'] = stats['total'] = 0
+    filters = filter_block(params, limit=not nolimit)
+
+    total = 0
     for stat in q['stat_src']:
-        stats['total'] += stat.count
-        if stat.action == 'c':
-            stats['created'] += stat.count
-        elif stat.action == 'd':
-            stats['deleted'] += stat.count
-        elif stat.action == 'm':
-            stats['modified'] += stat.count
-        elif stat.action == 'n':
-            stats['notes'] += stat.count
-        elif stat.action == 'a':
-            stats['anomalies'] += stat.count
-        if stat.obj_type == 'n':
-            stats['nodes'] += stat.count
-        elif stat.obj_type == 'w':
-            stats['ways'] += stat.count
-        elif stat.obj_type == 'r':
-            stats['relations'] += stat.count
-    stats['pages'] = (stats['total'] + config.PAGE_SIZE - 1) / config.PAGE_SIZE
-    stats['users'] = q['users'].count(clear_limit=True)
-
-    return render_template('index.html', stats=stats,
-                           changes=q['changes'], users=q['users'], tags=q['tags'],
-                           versions=q['versions'], dates=q['dates'], countries=q['countries'],
-                           has_revert=config.OAUTH_KEY != '',
-                           params=params, purl=purl)
+        total += stat.count
+    pages = (total + config.PAGE_SIZE - 1) / config.PAGE_SIZE
+    return render_template('index.html', filters=filters, changes=q['changes'], pages=pages,
+                           has_revert=config.OAUTH_KEY != '', params=params, purl=purl)
