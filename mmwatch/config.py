@@ -20,6 +20,9 @@ OAUTH_KEY = ''
 OAUTH_SECRET = ''
 SECRET_KEY = 'sdkjfhsfljhsadf'
 
+# Set to the URL of mmwatch installation, to update filters
+ENDPOINT = None
+
 try:
     from config_local import *
 except ImportError:

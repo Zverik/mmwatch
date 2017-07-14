@@ -21,3 +21,8 @@ if st.run_hourly():
     st = State.get(State.id == 1)
     st.update_hourly()
     st.save()
+
+import config
+if config.ENDPOINT:
+    import urllib2
+    urllib2.urlopen('{0}/filters'.format(config.ENDPOINT))
