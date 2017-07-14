@@ -95,7 +95,7 @@ def prepare_query(params):
     q['changes'] = (Change
                     .select()
                     .order_by(Change.id.desc())
-                    .paginate(params['page'], config.PAGE_SIZE))
+                    .paginate(params.get('page', 1), config.PAGE_SIZE))
     q['users'] = (Change
                   .select(Change.user, peewee.fn.Count(Change.id).alias('count'))
                   .group_by(Change.user)
@@ -210,6 +210,21 @@ def filter_block(params=None, limit=True):
                            params=params, purl=purl)
 
 
+def cached_filter_block(params=None, limit=True):
+    if not params or len(params) <= 1:
+        # Try getting filters from the cache, when params has only the page number
+        cache_key = 'mmwatch_filters'
+        if not limit:
+            cache_key += '_nolimit'
+        filters = cache.get(cache_key)
+        if filters is None:
+            filters = filter_block(params, limit)
+            cache.set(cache_key, filters, timeout=5*60)
+        return filters
+    else:
+        return filter_block(params, limit)
+
+
 def as_geojson(changes):
     features = []
     for ch in changes.limit(3000):
@@ -233,6 +248,13 @@ def as_geojson(changes):
                      mimetype='Content-Type: application/vnd.geo+json',
                      attachment_filename='mapsme_changes.geojson',
                      as_attachment=True)
+
+
+@app.route('/filters')
+def update_filters():
+    cached_filter_block(None, False)
+    cached_filter_block(None, True)
+    return 'Filter caches were updated.'
 
 
 @app.route('/')
@@ -281,11 +303,9 @@ def the_one_and_only_page():
     if request.args.get('export', None) == '1':
         return as_geojson(q['changes'])
 
-    filters = filter_block(params, limit=not nolimit)
+    filters = cached_filter_block(params, limit=not nolimit)
 
-    total = 0
-    for stat in q['stat_src']:
-        total += stat.count
+    total = sum(map(lambda s: s.count, q['stat_src']))
     pages = (total + config.PAGE_SIZE - 1) / config.PAGE_SIZE
     return render_template('index.html', filters=filters, changes=q['changes'], pages=pages,
                            has_revert=config.OAUTH_KEY != '', params=params, purl=purl)
