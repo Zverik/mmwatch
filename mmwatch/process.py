@@ -30,4 +30,4 @@ if config.ENDPOINT:
     else:
         urls = [config.ENDPOINT]
     for url in urls:
-        urllib2.urlopen('{0}/filters'.format(url))
+        urllib2.urlopen('{0}/filters'.format(url.rstrip('/ ')))
