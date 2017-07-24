@@ -25,4 +25,9 @@ if st.run_hourly():
 import config
 if config.ENDPOINT:
     import urllib2
-    urllib2.urlopen('{0}/filters'.format(config.ENDPOINT))
+    if isinstance(config.ENDPOINT, (list, tuple)):
+        urls = config.ENDPOINT
+    else:
+        urls = [config.ENDPOINT]
+    for url in urls:
+        urllib2.urlopen('{0}/filters'.format(url))
