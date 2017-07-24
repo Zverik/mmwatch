@@ -171,8 +171,6 @@ def filter_block(params=None, limit=True):
     """Prepares a filter block with given params."""
     if params is None:
         params = {}
-    app.logger.info('Preparing filter block for %s, params: %s',
-                    'limit' if limit else 'nolimit', params)
     q = prepare_query(params)
 
     for k in ('users', 'tags', 'versions', 'dates', 'countries'):
@@ -219,12 +217,9 @@ def cached_filter_block(params=None, limit=True, force=False):
         if not limit:
             cache_key += '_nolimit'
         filters = None if force else cache.get(cache_key)
-        app.logger.info('Cache data for key %s: %s', cache_key,
-                        'None' if filters is None else '{0} bytes'.format(len(filters)))
         if filters is None:
             filters = filter_block(params, limit)
             cache.set(cache_key, filters, timeout=5*60)
-            app.logger.info('Updated cache for key %s', cache_key)
         return filters
     else:
         return filter_block(params, limit)
