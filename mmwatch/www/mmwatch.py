@@ -13,7 +13,7 @@ from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache()
 
 
-def cached(timeout=5 * 60, key='view'):
+def cached(timeout=1 * 60, key='view'):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -171,6 +171,8 @@ def filter_block(params=None, limit=True):
     """Prepares a filter block with given params."""
     if params is None:
         params = {}
+    app.logger.info('Preparing filter block for %s, params: %s',
+                    'limit' if limit else 'nolimit', params)
     q = prepare_query(params)
 
     for k in ('users', 'tags', 'versions', 'dates', 'countries'):
@@ -210,16 +212,19 @@ def filter_block(params=None, limit=True):
                            params=params, purl=purl)
 
 
-def cached_filter_block(params=None, limit=True):
+def cached_filter_block(params=None, limit=True, force=False):
     if not params or len(params) <= 1:
         # Try getting filters from the cache, when params has only the page number
         cache_key = 'mmwatch_filters'
         if not limit:
             cache_key += '_nolimit'
-        filters = cache.get(cache_key)
+        filters = None if force else cache.get(cache_key)
+        app.logger.info('Cache data for key %s: %s', cache_key,
+                        'None' if filters is None else '{0} bytes'.format(len(filters)))
         if filters is None:
             filters = filter_block(params, limit)
             cache.set(cache_key, filters, timeout=5*60)
+            app.logger.info('Updated cache for key %s', cache_key)
         return filters
     else:
         return filter_block(params, limit)
@@ -252,13 +257,13 @@ def as_geojson(changes):
 
 @app.route('/filters')
 def update_filters():
-    cached_filter_block(None, False)
-    cached_filter_block(None, True)
+    cached_filter_block(None, False, force=True)
+    cached_filter_block(None, True, force=True)
     return 'Filter caches were updated.'
 
 
-@app.route('/')
 @cached()
+@app.route('/')
 def the_one_and_only_page():
     if is_disabled():
         return "The service is disabled for updates.<br>Please come back in a couple minutes."
