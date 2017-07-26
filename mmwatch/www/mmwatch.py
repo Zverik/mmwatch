@@ -12,6 +12,12 @@ from werkzeug.contrib.cache import SimpleCache
 
 cache = SimpleCache()
 
+if config.DEBUG:
+    import logging
+    logger = logging.getLogger('peewee')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+
 
 def cached(timeout=1 * 60, key='view'):
     def decorator(f):
@@ -108,6 +114,7 @@ def prepare_query(params):
                      .select(Change.version, peewee.fn.Count(Change.id).alias('count'))
                      .group_by(Change.version)
                      .order_by(peewee.fn.Count(Change.id).desc()))
+    q['count'] = Change.select(peewee.fn.Count(Change.id).alias('count'))
     q['stat_src'] = (Change
                      .select(Change.action, Change.obj_type,
                              peewee.fn.Count(Change.id).alias('count'))
@@ -303,9 +310,12 @@ def the_one_and_only_page():
     if request.args.get('export', None) == '1':
         return as_geojson(q['changes'])
 
-    filters = cached_filter_block(params, limit=not nolimit)
+    if config.HIDE_FILTERS and len(params) <= 1 and not request.args.get('filters', None):
+        filters = None
+    else:
+        filters = cached_filter_block(params, limit=not nolimit)
 
-    total = sum(map(lambda s: s.count, q['stat_src']))
+    total = sum(map(lambda s: s.count, q['count']))
     pages = (total + config.PAGE_SIZE - 1) / config.PAGE_SIZE
     return render_template('index.html', filters=filters, changes=q['changes'], pages=pages,
                            has_revert=config.OAUTH_KEY != '', params=params, purl=purl)

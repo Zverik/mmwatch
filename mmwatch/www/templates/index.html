@@ -4,7 +4,11 @@
 <body>
 <h1><a href="{{ url_for('the_one_and_only_page') }}">OSM Edits Made With MAPS.ME</a></h1>
 <div id="filterbar">
+    {% if filters %}
     {{ filters | safe }}
+    {% else %}
+    <a href="{{ purl(params, filters=1) }}">Show filters and statistics</a>
+    {% endif %}
 </div>
 <div>
   <h2>Changes</h2>
