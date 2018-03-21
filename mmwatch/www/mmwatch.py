@@ -47,7 +47,7 @@ def teardown(exception):
 
 @app.route('/robots.txt')
 def no_robots():
-    return 'User-agent: *\nDisallow: /'
+    return app.response_class('User-agent: *\nDisallow: /', mimetype='text/plain')
 
 
 @app.route('/user')
